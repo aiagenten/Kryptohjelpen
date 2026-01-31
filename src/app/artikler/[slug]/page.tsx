@@ -4,6 +4,9 @@ import { notFound } from 'next/navigation';
 import supabase from '@/lib/supabase';
 import { marked, Renderer } from 'marked';
 
+// Force dynamic rendering (no caching)
+export const dynamic = 'force-dynamic';
+
 // Configure marked to open external links in new tab
 const renderer = new Renderer();
 renderer.link = function({ href, title, text }) {

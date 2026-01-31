@@ -3,6 +3,9 @@ import Link from 'next/link';
 import supabase from '@/lib/supabase';
 import { BookOpen, Shield, Wallet, Palette, Cpu, Globe } from 'lucide-react';
 
+// Force dynamic rendering (no caching)
+export const dynamic = 'force-dynamic';
+
 export const metadata: Metadata = {
   title: 'Artikler om krypto, blockchain og Web3 | Kryptohjelpen',
   description: 'Lær om kryptovaluta, blockchain-teknologi, NFT, DeFi og Web3. Guider og artikler for nybegynnere og viderekommende.',
