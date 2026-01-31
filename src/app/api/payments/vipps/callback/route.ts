@@ -1,8 +1,5 @@
 import { NextRequest, NextResponse } from 'next/server';
-import Database from 'better-sqlite3';
-import path from 'path';
-
-const db = new Database(path.join(process.cwd(), 'database', 'store.db'));
+import supabase from '@/lib/supabase';
 
 export async function POST(request: NextRequest) {
   try {
@@ -15,36 +12,43 @@ export async function POST(request: NextRequest) {
       return NextResponse.json({ error: 'Invalid callback data' }, { status: 400 });
     }
 
-    const { status, amount } = transactionInfo;
+    const { status } = transactionInfo;
 
     // Update order status in database
     if (status === 'SALE' || status === 'RESERVE') {
       // Payment successful
-      const stmt = db.prepare(`
-        UPDATE orders 
-        SET status = 'paid', 
-            payment_status = 'completed',
-            payment_method = 'vipps',
-            payment_reference = ?,
-            updated_at = datetime('now')
-        WHERE id = ? OR order_number = ?
-      `);
-      
-      stmt.run(orderId, orderId, orderId);
-      console.log(`Order ${orderId} marked as paid via Vipps`);
+      const { error } = await supabase
+        .from('orders')
+        .update({
+          order_status: 'paid',
+          payment_status: 'completed',
+          payment_method: 'vipps',
+          updated_at: new Date().toISOString()
+        })
+        .or(`id.eq.${orderId},order_number.eq.${orderId}`);
+
+      if (error) {
+        console.error('Error updating order:', error);
+      } else {
+        console.log(`Order ${orderId} marked as paid via Vipps`);
+      }
 
     } else if (status === 'CANCELLED' || status === 'REJECTED') {
       // Payment failed/cancelled
-      const stmt = db.prepare(`
-        UPDATE orders 
-        SET status = 'cancelled', 
-            payment_status = 'failed',
-            updated_at = datetime('now')
-        WHERE id = ? OR order_number = ?
-      `);
-      
-      stmt.run(orderId, orderId);
-      console.log(`Order ${orderId} marked as cancelled`);
+      const { error } = await supabase
+        .from('orders')
+        .update({
+          order_status: 'cancelled',
+          payment_status: 'failed',
+          updated_at: new Date().toISOString()
+        })
+        .or(`id.eq.${orderId},order_number.eq.${orderId}`);
+
+      if (error) {
+        console.error('Error updating order:', error);
+      } else {
+        console.log(`Order ${orderId} marked as cancelled`);
+      }
     }
 
     return NextResponse.json({ success: true });

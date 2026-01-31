@@ -1,6 +1,6 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { cookies } from 'next/headers';
-import db from '@/lib/db';
+import supabase from '@/lib/supabase';
 
 async function requireAdmin() {
   const cookieStore = await cookies();
@@ -29,14 +29,17 @@ export async function PUT(request: NextRequest, { params }: { params: Promise<{ 
       return NextResponse.json({ error: 'Invalid status' }, { status: 400 });
     }
 
-    const result = db.prepare(`
-      UPDATE orders 
-      SET order_status = ?, updated_at = CURRENT_TIMESTAMP
-      WHERE id = ?
-    `).run(orderStatus, id);
+    const { error, count } = await supabase
+      .from('orders')
+      .update({
+        order_status: orderStatus,
+        updated_at: new Date().toISOString()
+      })
+      .eq('id', id);
 
-    if (result.changes === 0) {
-      return NextResponse.json({ error: 'Order not found' }, { status: 404 });
+    if (error) {
+      console.error('Error updating order:', error);
+      return NextResponse.json({ error: 'Failed to update order' }, { status: 500 });
     }
 
     return NextResponse.json({ success: true });
