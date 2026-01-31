@@ -200,20 +200,24 @@ export default function Home() {
         </div>
       </section>
 
-      {/* Trustpilot Section */}
-      <section className="bg-gray-50 py-10 border-b border-gray-200">
-        <div className="max-w-7xl mx-auto px-8 text-center">
-          <h2 className="text-2xl font-bold text-gray-800 mb-6">Hva kundene sier</h2>
+      {/* Trustpilot Reviews Section */}
+      <section className="bg-gray-50 py-12 border-b border-gray-200">
+        <div className="max-w-7xl mx-auto px-8">
+          <h2 className="text-2xl font-bold text-gray-800 mb-8 text-center">Hva kundene sier</h2>
+          {/* Trustpilot Carousel Widget - shows actual reviews */}
           <div 
             className="trustpilot-widget" 
             data-locale="no-NO" 
-            data-template-id="56278e9abfbbba0bdcd568bc"
+            data-template-id="54ad5defc6454f065c28af8b"
             data-businessunit-id="67a08e6a39b3ee3a1f5c8a3c"
-            data-style-height="52px"
+            data-style-height="240px"
             data-style-width="100%"
+            data-theme="light"
+            data-stars="4,5"
+            data-review-languages="no"
           >
-            <a href="https://no.trustpilot.com/review/kryptohjelpen.no" target="_blank" rel="noopener noreferrer" className="text-[var(--primary)] hover:underline">
-              Se våre anmeldelser på Trustpilot ⭐
+            <a href="https://no.trustpilot.com/review/kryptohjelpen.no" target="_blank" rel="noopener noreferrer">
+              Trustpilot
             </a>
           </div>
         </div>
