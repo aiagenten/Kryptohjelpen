@@ -1,7 +1,7 @@
 import { Metadata } from 'next';
 import Link from 'next/link';
 import { notFound } from 'next/navigation';
-import db from '@/lib/db';
+import supabase from '@/lib/supabase';
 import { marked, Renderer } from 'marked';
 
 // Configure marked to open external links in new tab
@@ -44,15 +44,23 @@ function getCategoryImage(category: string): string {
 }
 
 // Hent artikkel fra database
-function getArticle(slug: string): Article | null {
+async function getArticle(slug: string): Promise<Article | null> {
   try {
-    const article = db.prepare(`
-      SELECT id, title, slug, content, summary, image_url, category, created_at,
-             seo_title, seo_description, seo_keywords, aeo_question, aeo_answer
-      FROM articles
-      WHERE slug = ? AND is_published = 1
-    `).get(slug) as Article | undefined;
-    return article || null;
+    const { data: article, error } = await supabase
+      .from('articles')
+      .select(`
+        id, title, slug, content, summary, image_url, category, created_at,
+        seo_title, seo_description, seo_keywords, aeo_question, aeo_answer
+      `)
+      .eq('slug', slug)
+      .eq('is_published', true)
+      .single();
+
+    if (error) {
+      return null;
+    }
+
+    return article;
   } catch {
     return null;
   }
@@ -61,7 +69,7 @@ function getArticle(slug: string): Article | null {
 // Generer metadata for SEO
 export async function generateMetadata({ params }: { params: Promise<{ slug: string }> }): Promise<Metadata> {
   const { slug } = await params;
-  const article = getArticle(slug);
+  const article = await getArticle(slug);
 
   if (!article) {
     return { title: 'Artikkel ikke funnet' };
@@ -110,7 +118,7 @@ function getInlineImage(category: string): string {
 
 export default async function ArticlePage({ params }: { params: Promise<{ slug: string }> }) {
   const { slug } = await params;
-  const article = getArticle(slug);
+  const article = await getArticle(slug);
 
   if (!article) {
     notFound();

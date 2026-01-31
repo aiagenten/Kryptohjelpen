@@ -1,6 +1,6 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { Resend } from 'resend';
-import db from '@/lib/db';
+import supabase from '@/lib/supabase';
 
 const resend = process.env.RESEND_API_KEY ? new Resend(process.env.RESEND_API_KEY) : null;
 
@@ -13,11 +13,21 @@ export async function POST(request: NextRequest) {
     }
 
     // Save to database
-    const stmt = db.prepare(`
-      INSERT INTO contact_messages (name, email, subject, message)
-      VALUES (?, ?, ?, ?)
-    `);
-    const result = stmt.run(name, email, subject || null, message);
+    const { data, error } = await supabase
+      .from('contact_messages')
+      .insert({
+        name,
+        email,
+        subject: subject || null,
+        message
+      })
+      .select()
+      .single();
+
+    if (error) {
+      console.error('Contact form database error:', error);
+      return NextResponse.json({ error: 'Kunne ikke sende melding' }, { status: 500 });
+    }
 
     // Send email via Resend if configured
     if (resend) {
@@ -52,7 +62,7 @@ export async function POST(request: NextRequest) {
     return NextResponse.json({ 
       success: true, 
       message: 'Melding sendt',
-      id: result.lastInsertRowid 
+      id: data.id 
     });
   } catch (error) {
     console.error('Contact form error:', error);
@@ -66,13 +76,22 @@ export async function GET(request: NextRequest) {
     const { searchParams } = new URL(request.url);
     const unreadOnly = searchParams.get('unread') === 'true';
     
-    let query = 'SELECT * FROM contact_messages';
-    if (unreadOnly) {
-      query += ' WHERE is_read = 0';
-    }
-    query += ' ORDER BY created_at DESC';
+    let query = supabase
+      .from('contact_messages')
+      .select('*')
+      .order('created_at', { ascending: false });
     
-    const messages = db.prepare(query).all();
+    if (unreadOnly) {
+      query = query.eq('is_read', false);
+    }
+    
+    const { data: messages, error } = await query;
+
+    if (error) {
+      console.error('Failed to fetch messages:', error);
+      return NextResponse.json({ error: 'Kunne ikke hente meldinger' }, { status: 500 });
+    }
+
     return NextResponse.json(messages);
   } catch (error) {
     console.error('Failed to fetch messages:', error);

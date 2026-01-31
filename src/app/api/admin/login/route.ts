@@ -1,6 +1,6 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { cookies } from 'next/headers';
-import db from '@/lib/db';
+import supabase from '@/lib/supabase';
 import bcrypt from 'bcrypt';
 
 export async function POST(request: NextRequest) {
@@ -11,10 +11,13 @@ export async function POST(request: NextRequest) {
       return NextResponse.json({ error: 'Mangler brukernavn eller passord' }, { status: 400 });
     }
 
-    const stmt = db.prepare('SELECT * FROM admin_users WHERE username = ?');
-    const admin = stmt.get(username) as { id: number; username: string; email: string; password_hash: string } | undefined;
+    const { data: admin, error } = await supabase
+      .from('admin_users')
+      .select('*')
+      .eq('username', username)
+      .single();
 
-    if (!admin) {
+    if (error || !admin) {
       return NextResponse.json({ error: 'Ugyldig brukernavn eller passord' }, { status: 401 });
     }
 
@@ -25,7 +28,10 @@ export async function POST(request: NextRequest) {
     }
 
     // Update last login
-    db.prepare('UPDATE admin_users SET last_login = CURRENT_TIMESTAMP WHERE id = ?').run(admin.id);
+    await supabase
+      .from('admin_users')
+      .update({ last_login: new Date().toISOString() })
+      .eq('id', admin.id);
 
     // Set session cookie
     const cookieStore = await cookies();

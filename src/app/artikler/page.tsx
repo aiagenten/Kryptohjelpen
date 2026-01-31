@@ -1,6 +1,6 @@
 import { Metadata } from 'next';
 import Link from 'next/link';
-import db from '@/lib/db';
+import supabase from '@/lib/supabase';
 import { BookOpen, Shield, Wallet, Palette, Cpu, Globe } from 'lucide-react';
 
 export const metadata: Metadata = {
@@ -25,21 +25,27 @@ interface Article {
   created_at: string;
 }
 
-function getArticles(): Article[] {
+async function getArticles(): Promise<Article[]> {
   try {
-    return db.prepare(`
-      SELECT id, title, slug, summary, image_url, category, created_at
-      FROM articles
-      WHERE is_published = 1
-      ORDER BY created_at DESC
-    `).all() as Article[];
+    const { data, error } = await supabase
+      .from('articles')
+      .select('id, title, slug, summary, image_url, category, created_at')
+      .eq('is_published', true)
+      .order('created_at', { ascending: false });
+
+    if (error) {
+      console.error('Error fetching articles:', error);
+      return [];
+    }
+
+    return data || [];
   } catch {
     return [];
   }
 }
 
-export default function ArtiklerPage() {
-  const articles = getArticles();
+export default async function ArtiklerPage() {
+  const articles = await getArticles();
 
   const formatDate = (dateString: string) => {
     return new Date(dateString).toLocaleDateString('nb-NO', {

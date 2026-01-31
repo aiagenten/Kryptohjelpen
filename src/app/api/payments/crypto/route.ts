@@ -1,6 +1,6 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { ethers } from 'ethers';
-import db from '@/lib/db';
+import supabase from '@/lib/supabase';
 
 const WALLET_ADDRESS = '0x14f7b46445e77c61bb4f7b23c81221dfc6928c9f';
 
@@ -134,16 +134,19 @@ export async function POST(request: NextRequest) {
       }
 
       // Update order in database
-      const stmt = db.prepare(`
-        UPDATE orders 
-        SET payment_status = 'completed',
-            order_status = 'paid',
-            payment_method = ?,
-            updated_at = datetime('now')
-        WHERE id = ? OR order_number = ?
-      `);
-      
-      stmt.run(`crypto-${network}`, orderId, orderId);
+      const { error } = await supabase
+        .from('orders')
+        .update({
+          payment_status: 'completed',
+          order_status: 'paid',
+          payment_method: `crypto-${network}`,
+          updated_at: new Date().toISOString()
+        })
+        .or(`id.eq.${orderId},order_number.eq.${orderId}`);
+
+      if (error) {
+        console.error('Failed to update order:', error);
+      }
 
       return NextResponse.json({
         verified: true,

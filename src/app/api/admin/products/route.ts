@@ -1,6 +1,6 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { cookies } from 'next/headers';
-import db from '@/lib/db';
+import supabase from '@/lib/supabase';
 
 async function requireAdmin() {
   const cookieStore = await cookies();
@@ -22,7 +22,16 @@ export async function GET() {
   }
 
   try {
-    const products = db.prepare('SELECT * FROM products ORDER BY created_at DESC').all();
+    const { data: products, error } = await supabase
+      .from('products')
+      .select('*')
+      .order('created_at', { ascending: false });
+
+    if (error) {
+      console.error('Error fetching products:', error);
+      return NextResponse.json({ error: 'Failed to fetch products' }, { status: 500 });
+    }
+
     return NextResponse.json(products);
   } catch (error) {
     console.error('Error fetching products:', error);
@@ -39,19 +48,32 @@ export async function POST(request: NextRequest) {
   try {
     const { name, slug, description, price, category, tags, stock, imageUrl } = await request.json();
 
-    const stmt = db.prepare(`
-      INSERT INTO products (name, slug, description, price_nok, image_url, category, tags, stock)
-      VALUES (?, ?, ?, ?, ?, ?, ?, ?)
-    `);
+    const { data, error } = await supabase
+      .from('products')
+      .insert({
+        name,
+        slug,
+        description: description || '',
+        price_nok: price,
+        image_url: imageUrl || null,
+        category,
+        tags: tags || '',
+        stock
+      })
+      .select()
+      .single();
 
-    const result = stmt.run(name, slug, description || '', price, imageUrl || null, category, tags || '', stock);
-
-    return NextResponse.json({ success: true, productId: result.lastInsertRowid });
-  } catch (error: any) {
-    console.error('Error creating product:', error);
-    if (error.message?.includes('UNIQUE constraint')) {
-      return NextResponse.json({ error: 'Product with this slug already exists' }, { status: 400 });
+    if (error) {
+      console.error('Error creating product:', error);
+      if (error.code === '23505') {
+        return NextResponse.json({ error: 'Product with this slug already exists' }, { status: 400 });
+      }
+      return NextResponse.json({ error: 'Failed to create product' }, { status: 500 });
     }
+
+    return NextResponse.json({ success: true, productId: data.id });
+  } catch (error) {
+    console.error('Error creating product:', error);
     return NextResponse.json({ error: 'Failed to create product' }, { status: 500 });
   }
 }

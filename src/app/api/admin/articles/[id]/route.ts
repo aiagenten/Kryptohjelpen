@@ -1,6 +1,6 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { cookies } from 'next/headers';
-import db from '@/lib/db';
+import supabase from '@/lib/supabase';
 
 async function requireAdmin() {
   const cookieStore = await cookies();
@@ -22,10 +22,16 @@ export async function GET(request: NextRequest, { params }: { params: Promise<{ 
   const { id } = await params;
 
   try {
-    const article = db.prepare('SELECT * FROM articles WHERE id = ?').get(id);
-    if (!article) {
+    const { data: article, error } = await supabase
+      .from('articles')
+      .select('*')
+      .eq('id', id)
+      .single();
+
+    if (error || !article) {
       return NextResponse.json({ error: 'Article not found' }, { status: 404 });
     }
+
     return NextResponse.json(article);
   } catch (error) {
     console.error('Error fetching article:', error);
@@ -50,38 +56,48 @@ export async function PUT(request: NextRequest, { params }: { params: Promise<{ 
     } = body;
 
     // Check existing published status
-    const existing = db.prepare('SELECT is_published, published_at FROM articles WHERE id = ?').get(id) as any;
+    const { data: existing } = await supabase
+      .from('articles')
+      .select('is_published, published_at')
+      .eq('id', id)
+      .single();
+
     let publishedAt = existing?.published_at;
     if (is_published && !existing?.is_published) {
       publishedAt = new Date().toISOString();
     }
 
-    const stmt = db.prepare(`
-      UPDATE articles 
-      SET title = ?, slug = ?, summary = ?, content = ?, category = ?, image_url = ?,
-          seo_title = ?, seo_description = ?, seo_keywords = ?,
-          aeo_question = ?, aeo_answer = ?,
-          is_published = ?, published_at = ?, updated_at = CURRENT_TIMESTAMP
-      WHERE id = ?
-    `);
+    const { error } = await supabase
+      .from('articles')
+      .update({
+        title,
+        slug,
+        summary: summary || '',
+        content: content || '',
+        category: category || null,
+        image_url: image_url || null,
+        seo_title: seo_title || null,
+        seo_description: seo_description || null,
+        seo_keywords: seo_keywords || null,
+        aeo_question: aeo_question || null,
+        aeo_answer: aeo_answer || null,
+        is_published: is_published || false,
+        published_at: publishedAt,
+        updated_at: new Date().toISOString()
+      })
+      .eq('id', id);
 
-    const result = stmt.run(
-      title, slug, summary || '', content || '', category || null, image_url || null,
-      seo_title || null, seo_description || null, seo_keywords || null,
-      aeo_question || null, aeo_answer || null,
-      is_published ? 1 : 0, publishedAt, id
-    );
-
-    if (result.changes === 0) {
-      return NextResponse.json({ error: 'Article not found' }, { status: 404 });
+    if (error) {
+      console.error('Error updating article:', error);
+      if (error.code === '23505') {
+        return NextResponse.json({ error: 'Article with this slug already exists' }, { status: 400 });
+      }
+      return NextResponse.json({ error: 'Failed to update article' }, { status: 500 });
     }
 
     return NextResponse.json({ success: true });
-  } catch (error: any) {
+  } catch (error) {
     console.error('Error updating article:', error);
-    if (error.message?.includes('UNIQUE constraint')) {
-      return NextResponse.json({ error: 'Article with this slug already exists' }, { status: 400 });
-    }
     return NextResponse.json({ error: 'Failed to update article' }, { status: 500 });
   }
 }
@@ -95,10 +111,14 @@ export async function DELETE(request: NextRequest, { params }: { params: Promise
   const { id } = await params;
 
   try {
-    const result = db.prepare('DELETE FROM articles WHERE id = ?').run(id);
+    const { error } = await supabase
+      .from('articles')
+      .delete()
+      .eq('id', id);
 
-    if (result.changes === 0) {
-      return NextResponse.json({ error: 'Article not found' }, { status: 404 });
+    if (error) {
+      console.error('Error deleting article:', error);
+      return NextResponse.json({ error: 'Failed to delete article' }, { status: 500 });
     }
 
     return NextResponse.json({ success: true });

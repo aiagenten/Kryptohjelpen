@@ -1,6 +1,6 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { cookies } from 'next/headers';
-import db from '@/lib/db';
+import supabase from '@/lib/supabase';
 
 async function requireAdmin() {
   const cookieStore = await cookies();
@@ -24,28 +24,33 @@ export async function PUT(request: NextRequest, { params }: { params: Promise<{ 
   try {
     const { name, slug, description, price, category, tags, stock, imageUrl, isActive } = await request.json();
 
-    const stmt = db.prepare(`
-      UPDATE products 
-      SET name = ?, slug = ?, description = ?, price_nok = ?, image_url = ?, 
-          category = ?, tags = ?, stock = ?, is_active = ?, updated_at = CURRENT_TIMESTAMP
-      WHERE id = ?
-    `);
+    const { error } = await supabase
+      .from('products')
+      .update({
+        name,
+        slug,
+        description: description || '',
+        price_nok: price,
+        image_url: imageUrl || null,
+        category,
+        tags: tags || '',
+        stock,
+        is_active: isActive ?? true,
+        updated_at: new Date().toISOString()
+      })
+      .eq('id', id);
 
-    const result = stmt.run(
-      name, slug, description || '', price, imageUrl || null,
-      category, tags || '', stock, isActive ? 1 : 0, id
-    );
-
-    if (result.changes === 0) {
-      return NextResponse.json({ error: 'Product not found' }, { status: 404 });
+    if (error) {
+      console.error('Error updating product:', error);
+      if (error.code === '23505') {
+        return NextResponse.json({ error: 'Product with this slug already exists' }, { status: 400 });
+      }
+      return NextResponse.json({ error: 'Failed to update product' }, { status: 500 });
     }
 
     return NextResponse.json({ success: true });
-  } catch (error: any) {
+  } catch (error) {
     console.error('Error updating product:', error);
-    if (error.message?.includes('UNIQUE constraint')) {
-      return NextResponse.json({ error: 'Product with this slug already exists' }, { status: 400 });
-    }
     return NextResponse.json({ error: 'Failed to update product' }, { status: 500 });
   }
 }
@@ -59,10 +64,14 @@ export async function DELETE(request: NextRequest, { params }: { params: Promise
   const { id } = await params;
 
   try {
-    const result = db.prepare('DELETE FROM products WHERE id = ?').run(id);
+    const { error } = await supabase
+      .from('products')
+      .delete()
+      .eq('id', id);
 
-    if (result.changes === 0) {
-      return NextResponse.json({ error: 'Product not found' }, { status: 404 });
+    if (error) {
+      console.error('Error deleting product:', error);
+      return NextResponse.json({ error: 'Failed to delete product' }, { status: 500 });
     }
 
     return NextResponse.json({ success: true });

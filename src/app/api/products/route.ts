@@ -1,5 +1,5 @@
 import { NextRequest, NextResponse } from 'next/server';
-import db from '@/lib/db';
+import supabase from '@/lib/supabase';
 
 export async function GET(request: NextRequest) {
   const searchParams = request.nextUrl.searchParams;
@@ -9,43 +9,32 @@ export async function GET(request: NextRequest) {
   const search = searchParams.get('search');
 
   try {
-    let query = 'SELECT * FROM products WHERE 1=1';
-    const params: (string | number)[] = [];
+    let query = supabase
+      .from('products')
+      .select('*', { count: 'exact' });
 
     if (category) {
-      query += ' AND category = ?';
-      params.push(category);
+      query = query.eq('category', category);
     }
 
     if (search) {
-      query += ' AND (name LIKE ? OR description LIKE ?)';
-      params.push(`%${search}%`, `%${search}%`);
+      query = query.or(`name.ilike.%${search}%,description.ilike.%${search}%`);
     }
 
-    query += ' ORDER BY created_at DESC LIMIT ? OFFSET ?';
-    params.push(limit, offset);
+    query = query
+      .order('created_at', { ascending: false })
+      .range(offset, offset + limit - 1);
 
-    const products = db.prepare(query).all(...params);
+    const { data: products, error, count } = await query;
 
-    // Get total count
-    let countQuery = 'SELECT COUNT(*) as total FROM products WHERE 1=1';
-    const countParams: string[] = [];
-
-    if (category) {
-      countQuery += ' AND category = ?';
-      countParams.push(category);
+    if (error) {
+      console.error('Products API error:', error);
+      return NextResponse.json({ error: 'Failed to fetch products' }, { status: 500 });
     }
-
-    if (search) {
-      countQuery += ' AND (name LIKE ? OR description LIKE ?)';
-      countParams.push(`%${search}%`, `%${search}%`);
-    }
-
-    const countResult = db.prepare(countQuery).get(...countParams) as { total: number };
 
     return NextResponse.json({
       products,
-      total: countResult.total,
+      total: count || 0,
       limit,
       offset
     });

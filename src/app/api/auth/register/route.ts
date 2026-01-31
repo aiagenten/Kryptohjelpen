@@ -1,6 +1,6 @@
 import { NextRequest, NextResponse } from 'next/server';
 import bcrypt from 'bcrypt';
-import db from '@/lib/db';
+import supabase from '@/lib/supabase';
 
 export async function POST(request: NextRequest) {
   try {
@@ -15,7 +15,11 @@ export async function POST(request: NextRequest) {
     }
 
     // Check if email already exists
-    const existing = db.prepare('SELECT id FROM customers WHERE email = ?').get(email.toLowerCase());
+    const { data: existing } = await supabase
+      .from('customers')
+      .select('id')
+      .eq('email', email.toLowerCase())
+      .single();
 
     if (existing) {
       return NextResponse.json({ error: 'E-postadressen er allerede registrert' }, { status: 400 });
@@ -25,25 +29,34 @@ export async function POST(request: NextRequest) {
     const passwordHash = await bcrypt.hash(password, 10);
 
     // Insert customer
-    const result = db.prepare(`
-      INSERT INTO customers (name, email, phone, password_hash, created_at)
-      VALUES (?, ?, ?, ?, datetime('now'))
-    `).run(name, email.toLowerCase(), phone || null, passwordHash);
+    const { data: customer, error } = await supabase
+      .from('customers')
+      .insert({
+        name,
+        email: email.toLowerCase(),
+        phone: phone || null,
+        password_hash: passwordHash
+      })
+      .select()
+      .single();
 
-    const customerId = result.lastInsertRowid;
+    if (error) {
+      console.error('Registration error:', error);
+      return NextResponse.json({ error: 'Registrering feilet' }, { status: 500 });
+    }
 
     const session = {
-      customerId,
-      email: email.toLowerCase(),
-      name
+      customerId: customer.id,
+      email: customer.email,
+      name: customer.name
     };
 
     const response = NextResponse.json({
       success: true,
       customer: {
-        id: customerId,
-        name,
-        email: email.toLowerCase()
+        id: customer.id,
+        name: customer.name,
+        email: customer.email
       }
     });
 

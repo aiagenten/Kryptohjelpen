@@ -1,6 +1,6 @@
 import { NextResponse } from 'next/server';
 import { cookies } from 'next/headers';
-import db from '@/lib/db';
+import supabase from '@/lib/supabase';
 
 async function requireAdmin() {
   const cookieStore = await cookies();
@@ -21,62 +21,92 @@ export async function GET() {
 
   try {
     // Total sales
-    const totalSales = db.prepare(`
-      SELECT COALESCE(SUM(total_nok), 0) as total 
-      FROM orders 
-      WHERE payment_status = 'completed'
-    `).get() as { total: number };
+    const { data: salesData } = await supabase
+      .from('orders')
+      .select('total_nok')
+      .eq('payment_status', 'completed');
+    
+    const totalSales = salesData?.reduce((sum, o) => sum + (o.total_nok || 0), 0) || 0;
 
     // Orders by status
-    const ordersByStatus = db.prepare(`
-      SELECT order_status, COUNT(*) as count 
-      FROM orders 
-      GROUP BY order_status
-    `).all();
+    const { data: allOrders } = await supabase
+      .from('orders')
+      .select('order_status');
+    
+    const statusCounts: Record<string, number> = {};
+    allOrders?.forEach(o => {
+      statusCounts[o.order_status] = (statusCounts[o.order_status] || 0) + 1;
+    });
+    const ordersByStatus = Object.entries(statusCounts).map(([order_status, count]) => ({
+      order_status,
+      count
+    }));
 
     // Payment methods
-    const paymentMethods = db.prepare(`
-      SELECT payment_method, COUNT(*) as count, COALESCE(SUM(total_nok), 0) as total
-      FROM orders 
-      WHERE payment_status = 'completed'
-      GROUP BY payment_method
-    `).all();
+    const { data: completedOrders } = await supabase
+      .from('orders')
+      .select('payment_method, total_nok')
+      .eq('payment_status', 'completed');
+    
+    const methodStats: Record<string, { count: number; total: number }> = {};
+    completedOrders?.forEach(o => {
+      if (!methodStats[o.payment_method]) {
+        methodStats[o.payment_method] = { count: 0, total: 0 };
+      }
+      methodStats[o.payment_method].count++;
+      methodStats[o.payment_method].total += o.total_nok || 0;
+    });
+    const paymentMethods = Object.entries(methodStats).map(([payment_method, stats]) => ({
+      payment_method,
+      count: stats.count,
+      total: stats.total
+    }));
 
     // Recent orders
-    const recentOrders = db.prepare(`
-      SELECT id, order_number, customer_name, total_nok, payment_status, created_at
-      FROM orders 
-      ORDER BY created_at DESC 
-      LIMIT 10
-    `).all();
+    const { data: recentOrders } = await supabase
+      .from('orders')
+      .select('id, order_number, customer_name, total_nok, payment_status, created_at')
+      .order('created_at', { ascending: false })
+      .limit(10);
 
     // Top products
-    const topProducts = db.prepare(`
-      SELECT p.name, SUM(oi.quantity) as total_sold, SUM(oi.quantity * oi.price_nok) as revenue
-      FROM order_items oi
-      JOIN products p ON oi.product_id = p.id
-      JOIN orders o ON oi.order_id = o.id
-      WHERE o.payment_status = 'completed'
-      GROUP BY p.id, p.name
-      ORDER BY total_sold DESC
-      LIMIT 10
-    `).all();
+    const { data: orderItems } = await supabase
+      .from('order_items')
+      .select(`
+        quantity, price_nok, product_id,
+        products(name),
+        orders!inner(payment_status)
+      `)
+      .eq('orders.payment_status', 'completed');
+    
+    const productStats: Record<string, { name: string; total_sold: number; revenue: number }> = {};
+    orderItems?.forEach(item => {
+      const name = (item.products as any)?.name || 'Unknown';
+      if (!productStats[item.product_id]) {
+        productStats[item.product_id] = { name, total_sold: 0, revenue: 0 };
+      }
+      productStats[item.product_id].total_sold += item.quantity;
+      productStats[item.product_id].revenue += item.quantity * item.price_nok;
+    });
+    const topProducts = Object.values(productStats)
+      .sort((a, b) => b.total_sold - a.total_sold)
+      .slice(0, 10);
 
     // Low stock products
-    const lowStock = db.prepare(`
-      SELECT id, name, stock 
-      FROM products 
-      WHERE stock < 10 AND is_active = 1
-      ORDER BY stock ASC
-    `).all();
+    const { data: lowStock } = await supabase
+      .from('products')
+      .select('id, name, stock')
+      .eq('is_active', true)
+      .lt('stock', 10)
+      .order('stock', { ascending: true });
 
     return NextResponse.json({
-      totalSales: totalSales?.total || 0,
+      totalSales,
       ordersByStatus,
       paymentMethods,
-      recentOrders,
+      recentOrders: recentOrders || [],
       topProducts,
-      lowStock
+      lowStock: lowStock || []
     });
   } catch (error) {
     console.error('Error fetching analytics:', error);

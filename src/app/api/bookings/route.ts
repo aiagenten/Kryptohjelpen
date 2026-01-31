@@ -1,5 +1,5 @@
 import { NextRequest, NextResponse } from 'next/server';
-import db from '@/lib/db';
+import supabase from '@/lib/supabase';
 import { v4 as uuidv4 } from 'uuid';
 
 export async function POST(request: NextRequest) {
@@ -12,26 +12,26 @@ export async function POST(request: NextRequest) {
 
     const bookingId = uuidv4();
 
-    // Check if bookings table exists, create if not
-    db.exec(`
-      CREATE TABLE IF NOT EXISTS bookings (
-        id TEXT PRIMARY KEY,
-        name TEXT NOT NULL,
-        email TEXT NOT NULL,
-        phone TEXT,
-        topic TEXT NOT NULL,
-        message TEXT,
-        booking_date TEXT NOT NULL,
-        booking_time TEXT NOT NULL,
-        status TEXT DEFAULT 'pending',
-        created_at TEXT DEFAULT CURRENT_TIMESTAMP
-      )
-    `);
+    const { error } = await supabase
+      .from('bookings')
+      .insert({
+        id: bookingId,
+        customer_name: name,
+        customer_email: email,
+        customer_phone: phone || null,
+        booking_date: date,
+        booking_time: time,
+        notes: topic + (message ? `: ${message}` : ''),
+        status: 'pending',
+        payment_status: 'pending',
+        duration_minutes: 60,
+        price_nok: 1490
+      });
 
-    db.prepare(`
-      INSERT INTO bookings (id, name, email, phone, topic, message, booking_date, booking_time)
-      VALUES (?, ?, ?, ?, ?, ?, ?, ?)
-    `).run(bookingId, name, email, phone || null, topic, message || null, date, time);
+    if (error) {
+      console.error('Booking error:', error);
+      return NextResponse.json({ error: 'Kunne ikke registrere booking' }, { status: 500 });
+    }
 
     return NextResponse.json({
       success: true,

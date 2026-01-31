@@ -1,6 +1,6 @@
 import { NextResponse } from 'next/server';
 import { cookies } from 'next/headers';
-import db from '@/lib/db';
+import supabase from '@/lib/supabase';
 
 async function requireAdmin() {
   const cookieStore = await cookies();
@@ -20,12 +20,16 @@ export async function GET() {
   }
 
   try {
-    const orders = db.prepare(`
-      SELECT id, order_number, customer_name, customer_email, total_nok, 
-             payment_method, payment_status, order_status, created_at
-      FROM orders 
-      ORDER BY created_at DESC
-    `).all();
+    const { data: orders, error } = await supabase
+      .from('orders')
+      .select('id, order_number, customer_name, customer_email, total_nok, payment_method, payment_status, order_status, created_at')
+      .order('created_at', { ascending: false });
+
+    if (error) {
+      console.error('Error fetching orders:', error);
+      return NextResponse.json({ error: 'Failed to fetch orders' }, { status: 500 });
+    }
+
     return NextResponse.json(orders);
   } catch (error) {
     console.error('Error fetching orders:', error);

@@ -1,14 +1,6 @@
 import { NextResponse } from 'next/server';
 import { cookies } from 'next/headers';
-import db from '@/lib/db';
-
-interface Customer {
-  id: number;
-  name: string;
-  email: string;
-  phone?: string;
-  created_at: string;
-}
+import supabase from '@/lib/supabase';
 
 export async function GET() {
   try {
@@ -26,13 +18,13 @@ export async function GET() {
         return NextResponse.json({ authenticated: false });
       }
 
-      const customer = db.prepare(`
-        SELECT id, name, email, phone, created_at
-        FROM customers
-        WHERE id = ?
-      `).get(session.customerId) as Customer | undefined;
+      const { data: customer, error } = await supabase
+        .from('customers')
+        .select('id, name, email, phone, created_at')
+        .eq('id', session.customerId)
+        .single();
 
-      if (!customer) {
+      if (error || !customer) {
         return NextResponse.json({ authenticated: false });
       }
 

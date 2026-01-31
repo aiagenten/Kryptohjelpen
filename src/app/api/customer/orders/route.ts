@@ -1,6 +1,6 @@
 import { NextResponse } from 'next/server';
 import { cookies } from 'next/headers';
-import db from '@/lib/db';
+import supabase from '@/lib/supabase';
 
 export async function GET() {
   try {
@@ -17,14 +17,24 @@ export async function GET() {
       return NextResponse.json({ error: 'Not authenticated' }, { status: 401 });
     }
 
-    const orders = db.prepare(`
-      SELECT id, order_number, total_nok, status, payment_status, created_at
-      FROM orders
-      WHERE customer_id = ?
-      ORDER BY created_at DESC
-    `).all(session.customerId);
+    const { data: orders, error } = await supabase
+      .from('orders')
+      .select('id, order_number, total_nok, order_status, payment_status, created_at')
+      .eq('customer_id', session.customerId)
+      .order('created_at', { ascending: false });
 
-    return NextResponse.json({ orders });
+    if (error) {
+      console.error('Customer orders error:', error);
+      return NextResponse.json({ orders: [] });
+    }
+
+    // Map status field for compatibility
+    const ordersWithStatus = orders?.map(o => ({
+      ...o,
+      status: o.order_status
+    })) || [];
+
+    return NextResponse.json({ orders: ordersWithStatus });
   } catch (error) {
     console.error('Customer orders error:', error);
     return NextResponse.json({ orders: [] });

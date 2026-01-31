@@ -1,5 +1,5 @@
 import { NextRequest, NextResponse } from 'next/server';
-import db from '@/lib/db';
+import supabase from '@/lib/supabase';
 
 export async function GET(request: NextRequest) {
   try {
@@ -7,22 +7,28 @@ export async function GET(request: NextRequest) {
     const limit = parseInt(searchParams.get('limit') || '20');
     const offset = parseInt(searchParams.get('offset') || '0');
 
-    const articles = db.prepare(`
-      SELECT id, title, slug, summary as excerpt, image_url, category, 
-             'Kryptohjelpen' as author, created_at
-      FROM articles
-      WHERE is_published = 1
-      ORDER BY created_at DESC
-      LIMIT ? OFFSET ?
-    `).all(limit, offset);
+    const { data: articles, error, count } = await supabase
+      .from('articles')
+      .select('id, title, slug, summary, image_url, category, created_at', { count: 'exact' })
+      .eq('is_published', true)
+      .order('created_at', { ascending: false })
+      .range(offset, offset + limit - 1);
 
-    const countResult = db.prepare(`
-      SELECT COUNT(*) as total FROM articles WHERE is_published = 1
-    `).get() as { total: number };
+    if (error) {
+      console.error('Articles API error:', error);
+      return NextResponse.json({ articles: [], total: 0 });
+    }
+
+    // Add author field for compatibility
+    const articlesWithAuthor = articles?.map(a => ({
+      ...a,
+      excerpt: a.summary,
+      author: 'Kryptohjelpen'
+    })) || [];
 
     return NextResponse.json({
-      articles,
-      total: countResult.total
+      articles: articlesWithAuthor,
+      total: count || 0
     });
   } catch (error) {
     console.error('Articles API error:', error);

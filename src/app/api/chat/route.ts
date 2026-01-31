@@ -1,7 +1,7 @@
 import { NextRequest, NextResponse } from 'next/server';
 import OpenAI from 'openai';
 import { findNextAvailableSlots, formatSlots } from '@/lib/calendar';
-import db from '@/lib/db';
+import supabase from '@/lib/supabase';
 
 const openai = new OpenAI({
   apiKey: process.env.OPENAI_API_KEY,
@@ -57,22 +57,28 @@ function isCryptoQuestion(message: string): boolean {
   return CRYPTO_KEYWORDS.some(keyword => lowerMessage.includes(keyword));
 }
 
-function hasActiveChatbotAccess(userId: number | null): boolean {
+async function hasActiveChatbotAccess(userId: number | null): Promise<boolean> {
   if (!userId) return false;
   
   try {
-    const result = db.prepare(`
-      SELECT oi.id FROM order_items oi
-      JOIN orders o ON oi.order_id = o.id
-      JOIN products p ON oi.product_id = p.id
-      WHERE o.user_id = ? 
-        AND o.status = 'completed'
-        AND p.category = 'chatbot'
-        AND o.created_at > datetime('now', '-7 days')
-      LIMIT 1
-    `).get(userId) as { id: number } | undefined;
+    // Check if user has active chatbot access (purchased in last 7 days)
+    const sevenDaysAgo = new Date();
+    sevenDaysAgo.setDate(sevenDaysAgo.getDate() - 7);
+
+    const { data, error } = await supabase
+      .from('order_items')
+      .select(`
+        id,
+        orders!inner(user_id, order_status, created_at),
+        products!inner(category)
+      `)
+      .eq('orders.user_id', userId)
+      .eq('orders.order_status', 'completed')
+      .eq('products.category', 'chatbot')
+      .gte('orders.created_at', sevenDaysAgo.toISOString())
+      .limit(1);
     
-    return !!result;
+    return !error && data && data.length > 0;
   } catch {
     return false;
   }
@@ -109,7 +115,7 @@ export async function POST(request: NextRequest) {
     }
 
     const isCrypto = isCryptoQuestion(message);
-    const hasAccess = hasActiveChatbotAccess(userId);
+    const hasAccess = await hasActiveChatbotAccess(userId);
 
     // Determine which prompt to use
     let systemPrompt = FREE_PROMPT;

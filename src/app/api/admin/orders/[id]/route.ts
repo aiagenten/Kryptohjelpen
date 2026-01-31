@@ -1,6 +1,6 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { cookies } from 'next/headers';
-import db from '@/lib/db';
+import supabase from '@/lib/supabase';
 
 async function requireAdmin() {
   const cookieStore = await cookies();
@@ -22,16 +22,32 @@ export async function GET(request: NextRequest, { params }: { params: Promise<{ 
   const { id } = await params;
 
   try {
-    const order = db.prepare('SELECT * FROM orders WHERE id = ?').get(id);
+    const { data: order, error: orderError } = await supabase
+      .from('orders')
+      .select('*')
+      .eq('id', id)
+      .single();
 
-    if (!order) {
+    if (orderError || !order) {
       return NextResponse.json({ error: 'Order not found' }, { status: 404 });
     }
 
-    const items = db.prepare('SELECT * FROM order_items WHERE order_id = ?').all(id);
-    const transactions = db.prepare('SELECT * FROM payment_transactions WHERE order_id = ? ORDER BY created_at DESC').all(id);
+    const { data: items } = await supabase
+      .from('order_items')
+      .select('*')
+      .eq('order_id', id);
 
-    return NextResponse.json({ order, items, transactions });
+    const { data: transactions } = await supabase
+      .from('payment_transactions')
+      .select('*')
+      .eq('order_id', id)
+      .order('created_at', { ascending: false });
+
+    return NextResponse.json({ 
+      order, 
+      items: items || [], 
+      transactions: transactions || [] 
+    });
   } catch (error) {
     console.error('Error fetching order:', error);
     return NextResponse.json({ error: 'Failed to fetch order' }, { status: 500 });

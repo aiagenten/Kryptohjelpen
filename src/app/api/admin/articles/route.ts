@@ -1,6 +1,6 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { cookies } from 'next/headers';
-import db from '@/lib/db';
+import supabase from '@/lib/supabase';
 
 async function requireAdmin() {
   const cookieStore = await cookies();
@@ -20,7 +20,16 @@ export async function GET() {
   }
 
   try {
-    const articles = db.prepare('SELECT * FROM articles ORDER BY created_at DESC').all();
+    const { data: articles, error } = await supabase
+      .from('articles')
+      .select('*')
+      .order('created_at', { ascending: false });
+
+    if (error) {
+      console.error('Error fetching articles:', error);
+      return NextResponse.json({ error: 'Failed to fetch articles' }, { status: 500 });
+    }
+
     return NextResponse.json(articles);
   } catch (error) {
     console.error('Error fetching articles:', error);
@@ -44,29 +53,38 @@ export async function POST(request: NextRequest) {
 
     const publishedAt = is_published ? new Date().toISOString() : null;
 
-    const stmt = db.prepare(`
-      INSERT INTO articles (
-        title, slug, summary, content, category, image_url,
-        seo_title, seo_description, seo_keywords,
-        aeo_question, aeo_answer, aeo_schema_type,
-        is_published, published_at
-      )
-      VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, 'Article', ?, ?)
-    `);
+    const { data, error } = await supabase
+      .from('articles')
+      .insert({
+        title,
+        slug,
+        summary: summary || '',
+        content: content || '',
+        category: category || null,
+        image_url: image_url || null,
+        seo_title: seo_title || null,
+        seo_description: seo_description || null,
+        seo_keywords: seo_keywords || null,
+        aeo_question: aeo_question || null,
+        aeo_answer: aeo_answer || null,
+        aeo_schema_type: 'Article',
+        is_published: is_published || false,
+        published_at: publishedAt
+      })
+      .select()
+      .single();
 
-    const result = stmt.run(
-      title, slug, summary || '', content || '', category || null, image_url || null,
-      seo_title || null, seo_description || null, seo_keywords || null,
-      aeo_question || null, aeo_answer || null,
-      is_published ? 1 : 0, publishedAt
-    );
-
-    return NextResponse.json({ success: true, articleId: result.lastInsertRowid });
-  } catch (error: any) {
-    console.error('Error creating article:', error);
-    if (error.message?.includes('UNIQUE constraint')) {
-      return NextResponse.json({ error: 'Article with this slug already exists' }, { status: 400 });
+    if (error) {
+      console.error('Error creating article:', error);
+      if (error.code === '23505') {
+        return NextResponse.json({ error: 'Article with this slug already exists' }, { status: 400 });
+      }
+      return NextResponse.json({ error: 'Failed to create article' }, { status: 500 });
     }
+
+    return NextResponse.json({ success: true, articleId: data.id });
+  } catch (error) {
+    console.error('Error creating article:', error);
     return NextResponse.json({ error: 'Failed to create article' }, { status: 500 });
   }
 }

@@ -1,13 +1,6 @@
 import { NextRequest, NextResponse } from 'next/server';
 import bcrypt from 'bcrypt';
-import db from '@/lib/db';
-
-interface Customer {
-  id: number;
-  name: string;
-  email: string;
-  password_hash: string;
-}
+import supabase from '@/lib/supabase';
 
 export async function POST(request: NextRequest) {
   try {
@@ -17,13 +10,13 @@ export async function POST(request: NextRequest) {
       return NextResponse.json({ error: 'E-post og passord er påkrevd' }, { status: 400 });
     }
 
-    const customer = db.prepare(`
-      SELECT id, name, email, password_hash
-      FROM customers
-      WHERE email = ?
-    `).get(email.toLowerCase()) as Customer | undefined;
+    const { data: customer, error } = await supabase
+      .from('customers')
+      .select('id, name, email, password_hash')
+      .eq('email', email.toLowerCase())
+      .single();
 
-    if (!customer) {
+    if (error || !customer) {
       return NextResponse.json({ error: 'Feil e-post eller passord' }, { status: 401 });
     }
 

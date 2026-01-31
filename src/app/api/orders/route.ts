@@ -1,6 +1,5 @@
 import { NextRequest, NextResponse } from 'next/server';
-import db from '@/lib/db';
-import { cookies } from 'next/headers';
+import supabase from '@/lib/supabase';
 
 export async function POST(request: NextRequest) {
   try {
@@ -14,36 +13,49 @@ export async function POST(request: NextRequest) {
     // Generate order number
     const orderNumber = `KH-${Date.now()}-${Math.random().toString(36).substring(2, 7).toUpperCase()}`;
 
-    // Create order in database (use placeholder for customer info - will be updated after Vipps login)
-    const insertOrder = db.prepare(`
-      INSERT INTO orders (order_number, customer_email, customer_name, customer_phone, total_nok, payment_method, payment_status, order_status, created_at)
-      VALUES (?, ?, ?, ?, ?, ?, 'pending', 'processing', datetime('now'))
-    `);
-    
-    const result = insertOrder.run(
-      orderNumber, 
-      customerEmail || 'pending@vipps.no',
-      customerName || 'Vipps-kunde',
-      customerPhone || '',
-      total, 
-      paymentMethod || 'vipps'
-    );
-    const orderId = result.lastInsertRowid;
+    // Create order in database
+    const { data: order, error: orderError } = await supabase
+      .from('orders')
+      .insert({
+        order_number: orderNumber,
+        customer_email: customerEmail || 'pending@vipps.no',
+        customer_name: customerName || 'Vipps-kunde',
+        customer_phone: customerPhone || '',
+        total_nok: total,
+        payment_method: paymentMethod || 'vipps',
+        payment_status: 'pending',
+        order_status: 'processing'
+      })
+      .select()
+      .single();
+
+    if (orderError) {
+      console.error('Order creation error:', orderError);
+      return NextResponse.json({ error: 'Failed to create order' }, { status: 500 });
+    }
 
     // Insert order items
-    const insertItem = db.prepare(`
-      INSERT INTO order_items (order_id, product_id, product_name, price_nok, quantity)
-      VALUES (?, ?, ?, ?, ?)
-    `);
+    const orderItems = items.map((item: { product_id: number; name: string; price: number; quantity: number }) => ({
+      order_id: order.id,
+      product_id: item.product_id,
+      product_name: item.name,
+      price_nok: item.price,
+      quantity: item.quantity
+    }));
 
-    for (const item of items) {
-      insertItem.run(orderId, item.product_id, item.name, item.price, item.quantity);
+    const { error: itemsError } = await supabase
+      .from('order_items')
+      .insert(orderItems);
+
+    if (itemsError) {
+      console.error('Order items error:', itemsError);
+      // Order was created but items failed - might want to clean up
     }
 
     // Clear cart after order creation
     const response = NextResponse.json({
       success: true,
-      orderId: orderId,
+      orderId: order.id,
       orderNumber: orderNumber
     });
     
@@ -72,14 +84,17 @@ export async function GET(request: NextRequest) {
       return NextResponse.json({ error: 'Order ID or number required' }, { status: 400 });
     }
 
-    let order;
+    let query = supabase.from('orders').select('*');
+
     if (orderId) {
-      order = db.prepare('SELECT * FROM orders WHERE id = ?').get(orderId);
+      query = query.eq('id', orderId);
     } else {
-      order = db.prepare('SELECT * FROM orders WHERE order_number = ?').get(orderNumber);
+      query = query.eq('order_number', orderNumber);
     }
 
-    if (!order) {
+    const { data: order, error } = await query.single();
+
+    if (error || !order) {
       return NextResponse.json({ error: 'Order not found' }, { status: 404 });
     }
 

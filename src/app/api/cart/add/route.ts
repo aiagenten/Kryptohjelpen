@@ -1,6 +1,6 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { cookies } from 'next/headers';
-import db from '@/lib/db';
+import supabase from '@/lib/supabase';
 
 interface CartItem {
   product_id: number;
@@ -16,15 +16,6 @@ interface CartData {
   total: number;
 }
 
-interface Product {
-  id: number;
-  name: string;
-  price_nok: number;
-  image_url?: string;
-  category?: string;
-  stock: number;
-}
-
 export async function POST(request: NextRequest) {
   try {
     const { productId, quantity = 1 } = await request.json();
@@ -34,9 +25,13 @@ export async function POST(request: NextRequest) {
     }
 
     // Get product from database
-    const product = db.prepare('SELECT * FROM products WHERE id = ?').get(productId) as Product | undefined;
+    const { data: product, error } = await supabase
+      .from('products')
+      .select('*')
+      .eq('id', productId)
+      .single();
 
-    if (!product) {
+    if (error || !product) {
       return NextResponse.json({ error: 'Product not found' }, { status: 404 });
     }
 
