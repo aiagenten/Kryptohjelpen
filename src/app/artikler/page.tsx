@@ -100,8 +100,8 @@ export default async function ArtiklerPage() {
       />
 
       {/* Hero */}
-      <div className="page-hero">
-        <h1 className="text-4xl font-bold mb-4 flex items-center gap-3"><svg width="40" height="40" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"><path d="M4 19.5A2.5 2.5 0 0 1 6.5 17H20"></path><path d="M6.5 2H20v20H6.5A2.5 2.5 0 0 1 4 19.5v-15A2.5 2.5 0 0 1 6.5 2z"></path></svg>Lær om krypto</h1>
+      <div className="page-hero text-center">
+        <h1 className="text-4xl font-bold mb-4 flex items-center justify-center gap-3"><svg width="40" height="40" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"><path d="M4 19.5A2.5 2.5 0 0 1 6.5 17H20"></path><path d="M6.5 2H20v20H6.5A2.5 2.5 0 0 1 4 19.5v-15A2.5 2.5 0 0 1 6.5 2z"></path></svg>Lær om krypto</h1>
         <p className="text-xl opacity-90 max-w-2xl mx-auto">
           Artikler og guider for å forstå kryptovaluta, blockchain og Web3-teknologi.
         </p>
