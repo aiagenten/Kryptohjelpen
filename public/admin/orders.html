@@ -1,0 +1,326 @@
+<!DOCTYPE html>
+<html lang="no">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Bestillinger - Admin</title>
+    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/@picocss/pico@1/css/pico.min.css">
+    <style>
+        .orders-table {
+            overflow-x: auto;
+        }
+        table {
+            width: 100%;
+            border-collapse: collapse;
+        }
+        td, th {
+            padding: 0.8rem;
+            text-align: left;
+            border-bottom: 1px solid #ddd;
+        }
+        .status-badge {
+            padding: 0.3rem 0.8rem;
+            border-radius: 4px;
+            font-size: 0.85rem;
+            display: inline-block;
+        }
+        .status-completed { background: #27ae60; color: white; }
+        .status-pending { background: #f39c12; color: white; }
+        .status-failed { background: #e74c3c; color: white; }
+        .status-refunded { background: #95a5a6; color: white; }
+        .modal {
+            display: none;
+            position: fixed;
+            z-index: 1000;
+            left: 0;
+            top: 0;
+            width: 100%;
+            height: 100%;
+            overflow: auto;
+            background-color: rgba(0,0,0,0.5);
+        }
+        .modal-content {
+            background-color: white;
+            margin: 2% auto;
+            padding: 2rem;
+            border-radius: 8px;
+            max-width: 900px;
+            max-height: 90vh;
+            overflow-y: auto;
+        }
+        .close {
+            color: #aaa;
+            float: right;
+            font-size: 28px;
+            font-weight: bold;
+            cursor: pointer;
+        }
+        .close:hover {
+            color: black;
+        }
+        .order-detail-section {
+            background: #f8f9fa;
+            padding: 1rem;
+            border-radius: 4px;
+            margin: 1rem 0;
+        }
+    </style>
+</head>
+<body>
+    <nav class="container-fluid">
+        <ul>
+            <li><strong>🔐 Admin Panel</strong></li>
+        </ul>
+        <ul>
+            <li><a href="/admin/dashboard.html">Dashboard</a></li>
+            <li><a href="/admin/products.html">Produkter</a></li>
+            <li><a href="/admin/articles.html">Artikler</a></li>
+            <li><a href="/admin/orders.html">Bestillinger</a></li>
+            <li><a href="#" onclick="logout()">Logg ut</a></li>
+        </ul>
+    </nav>
+
+    <main class="container">
+        <h1>Bestillinger</h1>
+
+        <div class="orders-table">
+            <table id="orders-table">
+                <thead>
+                    <tr>
+                        <th>Ordrenr</th>
+                        <th>Kunde</th>
+                        <th>E-post</th>
+                        <th>Total</th>
+                        <th>Betalingsmetode</th>
+                        <th>Betalingsstatus</th>
+                        <th>Ordrestatus</th>
+                        <th>Dato</th>
+                        <th>Handlinger</th>
+                    </tr>
+                </thead>
+                <tbody id="orders-tbody">
+                    <tr><td colspan="9" style="text-align: center;">Laster bestillinger...</td></tr>
+                </tbody>
+            </table>
+        </div>
+    </main>
+
+    <!-- Order Details Modal -->
+    <div id="order-modal" class="modal">
+        <div class="modal-content">
+            <span class="close" onclick="closeOrderModal()">&times;</span>
+            <h2>Bestillingsdetaljer</h2>
+            
+            <div id="order-details">
+                <p>Laster...</p>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        let orders = [];
+
+        // Check authentication
+        fetch('/api/admin/check')
+            .then(res => res.json())
+            .then(data => {
+                if (!data.authenticated) {
+                    window.location.href = '/admin/';
+                }
+            });
+
+        async function loadOrders() {
+            try {
+                const res = await fetch('/api/admin/orders');
+                orders = await res.json();
+                renderOrders();
+            } catch (error) {
+                console.error('Failed to load orders:', error);
+            }
+        }
+
+        function renderOrders() {
+            const tbody = document.getElementById('orders-tbody');
+            
+            if (orders.length === 0) {
+                tbody.innerHTML = '<tr><td colspan="9" style="text-align: center;">Ingen bestillinger ennå</td></tr>';
+                return;
+            }
+
+            tbody.innerHTML = orders.map(order => {
+                const paymentClass = getStatusClass(order.payment_status);
+                const paymentMethod = order.payment_method === 'vips' ? '💳 VIPS' : '🦊 ETH';
+                const date = new Date(order.created_at).toLocaleDateString('no-NO');
+
+                return `
+                    <tr>
+                        <td><strong>${order.order_number}</strong></td>
+                        <td>${order.customer_name}</td>
+                        <td>${order.customer_email}</td>
+                        <td>${order.total_nok.toFixed(2)} NOK</td>
+                        <td>${paymentMethod}</td>
+                        <td><span class="status-badge ${paymentClass}">${order.payment_status}</span></td>
+                        <td>${order.order_status}</td>
+                        <td>${date}</td>
+                        <td>
+                            <button onclick="viewOrder(${order.id})" style="padding: 0.3rem 0.8rem;">Detaljer</button>
+                        </td>
+                    </tr>
+                `;
+            }).join('');
+        }
+
+        function getStatusClass(status) {
+            const classMap = {
+                'completed': 'status-completed',
+                'pending': 'status-pending',
+                'failed': 'status-failed',
+                'refunded': 'status-refunded'
+            };
+            return classMap[status] || 'status-pending';
+        }
+
+        async function viewOrder(orderId) {
+            document.getElementById('order-modal').style.display = 'block';
+            document.getElementById('order-details').innerHTML = '<p>Laster detaljer...</p>';
+
+            try {
+                const res = await fetch(`/api/admin/orders/${orderId}`);
+                const data = await res.json();
+
+                renderOrderDetails(data);
+
+            } catch (error) {
+                console.error('Failed to load order details:', error);
+                document.getElementById('order-details').innerHTML = '<p style="color: red;">Kunne ikke laste bestillingsdetaljer</p>';
+            }
+        }
+
+        function renderOrderDetails(data) {
+            const { order, items, transactions } = data;
+
+            const date = new Date(order.created_at).toLocaleString('no-NO');
+            const paymentMethod = order.payment_method === 'vips' ? '💳 Kortbetaling (VIPS)' : '🦊 Ethereum (ETH)';
+
+            const itemsHtml = items.map(item => `
+                <tr>
+                    <td>${item.product_name}</td>
+                    <td style="text-align: center;">${item.quantity}</td>
+                    <td style="text-align: right;">${item.price_nok.toFixed(2)} NOK</td>
+                    <td style="text-align: right;"><strong>${(item.price_nok * item.quantity).toFixed(2)} NOK</strong></td>
+                </tr>
+            `).join('');
+
+            const transactionsHtml = transactions.map(tx => {
+                const txDate = new Date(tx.created_at).toLocaleString('no-NO');
+                return `
+                    <div style="background: white; padding: 1rem; border-radius: 4px; margin: 0.5rem 0;">
+                        <p><strong>Transaksjon:</strong> ${tx.transaction_id}</p>
+                        ${tx.eth_tx_hash ? `
+                            <p><strong>Ethereum TX:</strong> <a href="https://etherscan.io/tx/${tx.eth_tx_hash}" target="_blank">${tx.eth_tx_hash}</a></p>
+                            <p><strong>Beløp ETH:</strong> ${tx.amount_eth} ETH</p>
+                        ` : ''}
+                        <p><strong>Status:</strong> ${tx.status}</p>
+                        <p><strong>Dato:</strong> ${txDate}</p>
+                    </div>
+                `;
+            }).join('');
+
+            document.getElementById('order-details').innerHTML = `
+                <div class="order-detail-section">
+                    <h3>Kundeinfo</h3>
+                    <p><strong>Navn:</strong> ${order.customer_name}</p>
+                    <p><strong>E-post:</strong> ${order.customer_email}</p>
+                    ${order.customer_phone ? `<p><strong>Telefon:</strong> ${order.customer_phone}</p>` : ''}
+                    ${order.shipping_address ? `
+                        <p><strong>Leveringsadresse:</strong><br>
+                        ${order.shipping_address.replace(/\n/g, '<br>')}</p>
+                    ` : ''}
+                    <p><strong>Ordredato:</strong> ${date}</p>
+                </div>
+
+                <div class="order-detail-section">
+                    <h3>Bestillingsinfo</h3>
+                    <p><strong>Ordrenummer:</strong> ${order.order_number}</p>
+                    <p><strong>Betalingsmetode:</strong> ${paymentMethod}</p>
+                    <p><strong>Betalingsstatus:</strong> <span class="status-badge ${getStatusClass(order.payment_status)}">${order.payment_status}</span></p>
+                    <p><strong>Ordrestatus:</strong> 
+                        <select id="order-status-select" onchange="updateOrderStatus(${order.id}, this.value)">
+                            <option value="processing" ${order.order_status === 'processing' ? 'selected' : ''}>Processing</option>
+                            <option value="shipped" ${order.order_status === 'shipped' ? 'selected' : ''}>Shipped</option>
+                            <option value="delivered" ${order.order_status === 'delivered' ? 'selected' : ''}>Delivered</option>
+                            <option value="cancelled" ${order.order_status === 'cancelled' ? 'selected' : ''}>Cancelled</option>
+                        </select>
+                    </p>
+                </div>
+
+                <div class="order-detail-section">
+                    <h3>Produkter</h3>
+                    <table style="width: 100%;">
+                        <thead>
+                            <tr>
+                                <th>Produkt</th>
+                                <th style="text-align: center;">Antall</th>
+                                <th style="text-align: right;">Pris</th>
+                                <th style="text-align: right;">Sum</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            ${itemsHtml}
+                        </tbody>
+                    </table>
+                    <p style="text-align: right; font-size: 1.3rem; margin-top: 1rem;">
+                        <strong>Total: ${order.total_nok.toFixed(2)} NOK</strong>
+                    </p>
+                </div>
+
+                ${transactions.length > 0 ? `
+                    <div class="order-detail-section">
+                        <h3>Transaksjoner</h3>
+                        ${transactionsHtml}
+                    </div>
+                ` : ''}
+
+                ${order.notes ? `
+                    <div class="order-detail-section">
+                        <h3>Notater</h3>
+                        <p>${order.notes}</p>
+                    </div>
+                ` : ''}
+            `;
+        }
+
+        async function updateOrderStatus(orderId, newStatus) {
+            try {
+                const res = await fetch(`/api/admin/orders/${orderId}/status`, {
+                    method: 'PUT',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({ orderStatus: newStatus })
+                });
+
+                if (res.ok) {
+                    alert('Ordrestatus oppdatert!');
+                    loadOrders();
+                } else {
+                    const error = await res.json();
+                    alert(error.error || 'Kunne ikke oppdatere status');
+                }
+            } catch (error) {
+                console.error('Update error:', error);
+                alert('Noe gikk galt');
+            }
+        }
+
+        function closeOrderModal() {
+            document.getElementById('order-modal').style.display = 'none';
+        }
+
+        async function logout() {
+            await fetch('/api/admin/logout', { method: 'POST' });
+            window.location.href = '/admin/';
+        }
+
+        loadOrders();
+    </script>
+</body>
+</html>

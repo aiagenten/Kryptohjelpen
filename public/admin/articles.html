@@ -1,0 +1,721 @@
+<!DOCTYPE html>
+<html lang="no">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Artikler - Admin</title>
+    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/@picocss/pico@1/css/pico.min.css">
+    <style>
+        :root {
+            --primary: #8DC99C;
+            --primary-dark: #5a9a6a;
+        }
+        
+        .articles-grid {
+            display: grid;
+            gap: 1rem;
+            margin: 2rem 0;
+        }
+        
+        .article-row {
+            display: grid;
+            grid-template-columns: 1fr 120px 100px 150px 100px;
+            gap: 1rem;
+            padding: 1rem;
+            background: #f8f9fa;
+            border-radius: 8px;
+            align-items: center;
+        }
+        
+        .article-row:hover {
+            background: #e9ecef;
+        }
+        
+        .article-title {
+            font-weight: 600;
+        }
+        
+        .article-slug {
+            font-size: 0.85rem;
+            color: #666;
+        }
+        
+        .status-badge {
+            padding: 0.3rem 0.8rem;
+            border-radius: 4px;
+            font-size: 0.85rem;
+            text-align: center;
+        }
+        
+        .status-published { background: #27ae60; color: white; }
+        .status-draft { background: #95a5a6; color: white; }
+        
+        .btn-group {
+            display: flex;
+            gap: 0.5rem;
+        }
+        
+        .btn-small {
+            padding: 0.4rem 0.8rem;
+            font-size: 0.85rem;
+        }
+        
+        .btn-primary {
+            background: var(--primary);
+            color: white;
+            border: none;
+        }
+        
+        .btn-danger {
+            background: #e74c3c;
+            color: white;
+            border: none;
+        }
+        
+        /* Modal Styles */
+        .modal {
+            display: none;
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background: rgba(0,0,0,0.5);
+            z-index: 1000;
+            overflow-y: auto;
+        }
+        
+        .modal.active { display: flex; }
+        
+        .modal-content {
+            background: white;
+            margin: 2rem auto;
+            padding: 2rem;
+            border-radius: 12px;
+            max-width: 900px;
+            width: 90%;
+            max-height: calc(100vh - 4rem);
+            overflow-y: auto;
+        }
+        
+        .modal-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 1.5rem;
+        }
+        
+        .modal-header h2 { margin: 0; }
+        
+        .close-btn {
+            background: none;
+            border: none;
+            font-size: 1.5rem;
+            cursor: pointer;
+        }
+        
+        .form-grid {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 1rem;
+        }
+        
+        .form-grid .full-width {
+            grid-column: 1 / -1;
+        }
+        
+        .form-group {
+            margin-bottom: 1rem;
+        }
+        
+        .form-group label {
+            display: block;
+            margin-bottom: 0.5rem;
+            font-weight: 500;
+        }
+        
+        .form-group input,
+        .form-group textarea,
+        .form-group select {
+            width: 100%;
+            padding: 0.75rem;
+            border: 1px solid #ddd;
+            border-radius: 6px;
+        }
+        
+        .form-group textarea {
+            min-height: 200px;
+            font-family: monospace;
+        }
+        
+        .section-title {
+            font-size: 1.1rem;
+            font-weight: 600;
+            margin: 1.5rem 0 1rem;
+            padding-bottom: 0.5rem;
+            border-bottom: 2px solid var(--primary);
+        }
+        
+        /* AI Generation */
+        .ai-section {
+            background: linear-gradient(135deg, var(--primary) 0%, var(--primary-dark) 100%);
+            color: white;
+            padding: 1.5rem;
+            border-radius: 12px;
+            margin-bottom: 2rem;
+        }
+        
+        .ai-section h3 {
+            color: white;
+            margin: 0 0 1rem 0;
+        }
+        
+        .ai-section input,
+        .ai-section textarea {
+            background: rgba(255,255,255,0.9);
+        }
+        
+        .ai-section button {
+            background: white;
+            color: var(--primary-dark);
+            font-weight: 600;
+        }
+        
+        .ai-section button:hover {
+            background: #f0f0f0;
+        }
+        
+        .generating {
+            opacity: 0.7;
+            pointer-events: none;
+        }
+        
+        .loading-text {
+            display: inline-flex;
+            align-items: center;
+            gap: 0.5rem;
+        }
+        
+        @keyframes spin {
+            to { transform: rotate(360deg); }
+        }
+        
+        .spinner {
+            width: 16px;
+            height: 16px;
+            border: 2px solid #ccc;
+            border-top-color: var(--primary-dark);
+            border-radius: 50%;
+            animation: spin 1s linear infinite;
+        }
+        
+        /* Tabs */
+        .tabs {
+            display: flex;
+            gap: 0.5rem;
+            margin-bottom: 1.5rem;
+            border-bottom: 2px solid #e0e0e0;
+        }
+        
+        .tab {
+            padding: 0.75rem 1.5rem;
+            background: none;
+            border: none;
+            cursor: pointer;
+            font-weight: 500;
+            color: #666;
+            margin-bottom: -2px;
+            border-bottom: 2px solid transparent;
+        }
+        
+        .tab.active {
+            color: var(--primary-dark);
+            border-bottom-color: var(--primary);
+        }
+        
+        .tab-content {
+            display: none;
+        }
+        
+        .tab-content.active {
+            display: block;
+        }
+        
+        .preview-content {
+            background: #f8f9fa;
+            padding: 1.5rem;
+            border-radius: 8px;
+            max-height: 400px;
+            overflow-y: auto;
+        }
+        
+        .preview-content h1, .preview-content h2, .preview-content h3 {
+            margin-top: 1rem;
+        }
+    </style>
+</head>
+<body>
+    <nav class="container-fluid">
+        <ul>
+            <li><strong>🔐 Admin Panel</strong></li>
+        </ul>
+        <ul>
+            <li><a href="/admin/dashboard.html">Dashboard</a></li>
+            <li><a href="/admin/products.html">Produkter</a></li>
+            <li><a href="/admin/articles.html">Artikler</a></li>
+            <li><a href="/admin/orders.html">Bestillinger</a></li>
+            <li><a href="#" onclick="logout()">Logg ut</a></li>
+        </ul>
+    </nav>
+
+    <main class="container">
+        <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 2rem;">
+            <h1>📚 Artikler</h1>
+            <button onclick="openNewArticleModal()" class="btn-primary">+ Ny artikkel</button>
+        </div>
+
+        <div class="articles-grid" id="articles-list">
+            <p>Laster artikler...</p>
+        </div>
+    </main>
+
+    <!-- Article Modal -->
+    <div id="article-modal" class="modal">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h2 id="modal-title">Ny artikkel</h2>
+                <button class="close-btn" onclick="closeModal()">&times;</button>
+            </div>
+
+            <!-- AI Generation Section -->
+            <div class="ai-section">
+                <h3>🤖 Generer med AI</h3>
+                <div class="form-group">
+                    <label for="ai-topic">Emne / Tema</label>
+                    <input type="text" id="ai-topic" placeholder="F.eks. 'Hvordan sette opp MetaMask lommebok'">
+                </div>
+                <div class="form-grid">
+                    <div class="form-group">
+                        <label for="ai-keywords">Nøkkelord (valgfritt)</label>
+                        <input type="text" id="ai-keywords" placeholder="F.eks. 'metamask, ethereum, lommebok'">
+                    </div>
+                    <div class="form-group">
+                        <label for="ai-audience">Målgruppe (valgfritt)</label>
+                        <input type="text" id="ai-audience" placeholder="F.eks. 'Nybegynnere'">
+                    </div>
+                </div>
+                <button onclick="generateArticle()" id="generate-btn">
+                    ✨ Generer artikkel
+                </button>
+            </div>
+
+            <!-- Tabs -->
+            <div class="tabs">
+                <button class="tab active" onclick="switchTab('editor')">Rediger</button>
+                <button class="tab" onclick="switchTab('seo')">SEO & AEO</button>
+                <button class="tab" onclick="switchTab('preview')">Forhåndsvisning</button>
+            </div>
+
+            <form id="article-form">
+                <input type="hidden" id="article-id">
+
+                <!-- Editor Tab -->
+                <div id="tab-editor" class="tab-content active">
+                    <div class="form-grid">
+                        <div class="form-group">
+                            <label for="title">Tittel *</label>
+                            <input type="text" id="title" required>
+                        </div>
+                        <div class="form-group">
+                            <label for="slug">URL-slug *</label>
+                            <input type="text" id="slug" required pattern="[a-z0-9-]+">
+                        </div>
+                    </div>
+
+                    <div class="form-grid">
+                        <div class="form-group">
+                            <label for="category">Kategori</label>
+                            <select id="category">
+                                <option value="">Velg kategori</option>
+                                <option value="Grunnleggende">Grunnleggende</option>
+                                <option value="Sikkerhet">Sikkerhet</option>
+                                <option value="DeFi">DeFi</option>
+                                <option value="NFT">NFT</option>
+                                <option value="Hardware">Hardware</option>
+                                <option value="Web3">Web3</option>
+                                <option value="Metaverse">Metaverse</option>
+                                <option value="Skatt">Skatt & Regulering</option>
+                            </select>
+                        </div>
+                        <div class="form-group">
+                            <label for="is_published">Status</label>
+                            <select id="is_published">
+                                <option value="0">Utkast</option>
+                                <option value="1">Publisert</option>
+                            </select>
+                        </div>
+                    </div>
+
+                    <div class="form-group">
+                        <label for="summary">Sammendrag</label>
+                        <textarea id="summary" rows="3" placeholder="Kort beskrivelse av artikkelen..."></textarea>
+                    </div>
+
+                    <div class="form-group">
+                        <label for="content">Innhold (Markdown)</label>
+                        <textarea id="content" rows="15" placeholder="Skriv artikkelinnhold her... Støtter Markdown-formattering."></textarea>
+                    </div>
+                </div>
+
+                <!-- SEO Tab -->
+                <div id="tab-seo" class="tab-content">
+                    <h3 class="section-title">🔍 SEO-felt</h3>
+                    <div class="form-group">
+                        <label for="seo_title">SEO-tittel (maks 60 tegn)</label>
+                        <input type="text" id="seo_title" maxlength="60">
+                    </div>
+                    <div class="form-group">
+                        <label for="seo_description">Meta-beskrivelse (maks 160 tegn)</label>
+                        <textarea id="seo_description" rows="2" maxlength="160"></textarea>
+                    </div>
+                    <div class="form-group">
+                        <label for="seo_keywords">Nøkkelord (kommaseparert)</label>
+                        <input type="text" id="seo_keywords">
+                    </div>
+
+                    <h3 class="section-title">🎯 AEO-felt (Answer Engine Optimization)</h3>
+                    <div class="form-group">
+                        <label for="aeo_question">Hovedspørsmål (for featured snippets)</label>
+                        <input type="text" id="aeo_question" placeholder="F.eks. 'Hva er en kryptolommebok?'">
+                    </div>
+                    <div class="form-group">
+                        <label for="aeo_answer">Direkte svar (kort og konsist)</label>
+                        <textarea id="aeo_answer" rows="3" placeholder="Et kort, direkte svar som kan vises i Google-snippets"></textarea>
+                    </div>
+                    <div class="form-group">
+                        <label for="aeo_schema_type">Schema-type</label>
+                        <select id="aeo_schema_type">
+                            <option value="Article">Article</option>
+                            <option value="HowTo">HowTo (Guide)</option>
+                            <option value="FAQPage">FAQ</option>
+                            <option value="NewsArticle">News Article</option>
+                        </select>
+                    </div>
+                </div>
+
+                <!-- Preview Tab -->
+                <div id="tab-preview" class="tab-content">
+                    <div class="preview-content" id="preview-content">
+                        <p>Klikk på "Oppdater forhåndsvisning" for å se artikkelen.</p>
+                    </div>
+                    <button type="button" onclick="updatePreview()" style="margin-top: 1rem;">
+                        🔄 Oppdater forhåndsvisning
+                    </button>
+                </div>
+
+                <div style="display: flex; gap: 1rem; margin-top: 2rem;">
+                    <button type="submit" class="btn-primary">Lagre artikkel</button>
+                    <button type="button" onclick="closeModal()">Avbryt</button>
+                </div>
+            </form>
+        </div>
+    </div>
+
+    <script>
+        // Check authentication
+        fetch('/api/admin/check')
+            .then(res => res.json())
+            .then(data => {
+                if (!data.authenticated) {
+                    window.location.href = '/admin/';
+                }
+            });
+
+        let articles = [];
+        let editingId = null;
+
+        // Load articles
+        async function loadArticles() {
+            try {
+                const res = await fetch('/api/admin/articles');
+                articles = await res.json();
+                renderArticles();
+            } catch (error) {
+                console.error('Failed to load articles:', error);
+            }
+        }
+
+        // Render articles list
+        function renderArticles() {
+            const container = document.getElementById('articles-list');
+            
+            if (articles.length === 0) {
+                container.innerHTML = '<p>Ingen artikler ennå. Klikk "Ny artikkel" for å komme i gang.</p>';
+                return;
+            }
+
+            container.innerHTML = `
+                <div class="article-row" style="background: #e0e0e0; font-weight: 600;">
+                    <div>Tittel</div>
+                    <div>Kategori</div>
+                    <div>Status</div>
+                    <div>Dato</div>
+                    <div>Handlinger</div>
+                </div>
+            ` + articles.map(article => `
+                <div class="article-row">
+                    <div>
+                        <div class="article-title">${article.title}</div>
+                        <div class="article-slug">/${article.slug}</div>
+                    </div>
+                    <div>${article.category || '-'}</div>
+                    <div>
+                        <span class="status-badge ${article.is_published ? 'status-published' : 'status-draft'}">
+                            ${article.is_published ? 'Publisert' : 'Utkast'}
+                        </span>
+                    </div>
+                    <div>${new Date(article.created_at).toLocaleDateString('nb-NO')}</div>
+                    <div class="btn-group">
+                        <button onclick="editArticle(${article.id})" class="btn-small">Rediger</button>
+                        <button onclick="deleteArticle(${article.id})" class="btn-small btn-danger">Slett</button>
+                    </div>
+                </div>
+            `).join('');
+        }
+
+        // Open new article modal
+        function openNewArticleModal() {
+            editingId = null;
+            document.getElementById('modal-title').textContent = 'Ny artikkel';
+            document.getElementById('article-form').reset();
+            document.getElementById('article-id').value = '';
+            document.getElementById('article-modal').classList.add('active');
+            switchTab('editor');
+        }
+
+        // Edit article
+        async function editArticle(id) {
+            try {
+                const res = await fetch(`/api/admin/articles/${id}`);
+                const article = await res.json();
+                
+                editingId = id;
+                document.getElementById('modal-title').textContent = 'Rediger artikkel';
+                document.getElementById('article-id').value = id;
+                
+                // Fill form
+                document.getElementById('title').value = article.title || '';
+                document.getElementById('slug').value = article.slug || '';
+                document.getElementById('category').value = article.category || '';
+                document.getElementById('summary').value = article.summary || '';
+                document.getElementById('content').value = article.content || '';
+                document.getElementById('is_published').value = article.is_published ? '1' : '0';
+                document.getElementById('seo_title').value = article.seo_title || '';
+                document.getElementById('seo_description').value = article.seo_description || '';
+                document.getElementById('seo_keywords').value = article.seo_keywords || '';
+                document.getElementById('aeo_question').value = article.aeo_question || '';
+                document.getElementById('aeo_answer').value = article.aeo_answer || '';
+                document.getElementById('aeo_schema_type').value = article.aeo_schema_type || 'Article';
+                
+                document.getElementById('article-modal').classList.add('active');
+                switchTab('editor');
+            } catch (error) {
+                console.error('Failed to load article:', error);
+                alert('Kunne ikke laste artikkelen');
+            }
+        }
+
+        // Close modal
+        function closeModal() {
+            document.getElementById('article-modal').classList.remove('active');
+        }
+
+        // Switch tabs
+        function switchTab(tabName) {
+            document.querySelectorAll('.tab').forEach(t => t.classList.remove('active'));
+            document.querySelectorAll('.tab-content').forEach(c => c.classList.remove('active'));
+            
+            document.querySelector(`[onclick="switchTab('${tabName}')"]`).classList.add('active');
+            document.getElementById(`tab-${tabName}`).classList.add('active');
+            
+            if (tabName === 'preview') {
+                updatePreview();
+            }
+        }
+
+        // Update preview
+        function updatePreview() {
+            const content = document.getElementById('content').value;
+            const title = document.getElementById('title').value;
+            const summary = document.getElementById('summary').value;
+            
+            let html = `<h1>${title}</h1><p><em>${summary}</em></p><hr>`;
+            html += parseMarkdown(content);
+            
+            document.getElementById('preview-content').innerHTML = html;
+        }
+
+        // Simple markdown parser
+        function parseMarkdown(md) {
+            if (!md) return '';
+            return md
+                .replace(/^### (.*$)/gim, '<h3>$1</h3>')
+                .replace(/^## (.*$)/gim, '<h2>$1</h2>')
+                .replace(/^# (.*$)/gim, '<h1>$1</h1>')
+                .replace(/\*\*(.*?)\*\*/gim, '<strong>$1</strong>')
+                .replace(/\*(.*?)\*/gim, '<em>$1</em>')
+                .replace(/\[(.*?)\]\((.*?)\)/gim, '<a href="$2">$1</a>')
+                .replace(/`(.*?)`/gim, '<code>$1</code>')
+                .replace(/^\- (.*$)/gim, '<li>$1</li>')
+                .replace(/\n\n/gim, '</p><p>')
+                .replace(/\n/gim, '<br>');
+        }
+
+        // Generate article with AI
+        async function generateArticle() {
+            const topic = document.getElementById('ai-topic').value.trim();
+            if (!topic) {
+                alert('Vennligst skriv inn et emne');
+                return;
+            }
+
+            const btn = document.getElementById('generate-btn');
+            const originalText = btn.innerHTML;
+            btn.innerHTML = '<span class="loading-text"><span class="spinner"></span> Genererer...</span>';
+            btn.disabled = true;
+
+            try {
+                const res = await fetch('/api/admin/articles/generate', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({
+                        topic,
+                        keywords: document.getElementById('ai-keywords').value,
+                        targetAudience: document.getElementById('ai-audience').value
+                    })
+                });
+
+                const data = await res.json();
+
+                if (data.success && data.article) {
+                    const article = data.article;
+                    
+                    // Fill form with generated content
+                    document.getElementById('title').value = article.title || '';
+                    document.getElementById('slug').value = article.slug || '';
+                    document.getElementById('summary').value = article.summary || '';
+                    document.getElementById('content').value = article.content || '';
+                    document.getElementById('category').value = article.category || '';
+                    document.getElementById('seo_title').value = article.seo_title || '';
+                    document.getElementById('seo_description').value = article.seo_description || '';
+                    document.getElementById('seo_keywords').value = article.seo_keywords || '';
+                    document.getElementById('aeo_question').value = article.aeo_question || '';
+                    document.getElementById('aeo_answer').value = article.aeo_answer || '';
+                    
+                    alert('✅ Artikkel generert! Gjennomgå og rediger før publisering.');
+                } else {
+                    alert('Feil: ' + (data.error || 'Kunne ikke generere artikkel'));
+                }
+            } catch (error) {
+                console.error('Generation error:', error);
+                alert('Kunne ikke generere artikkel. Sjekk at AI API-nøkkel er konfigurert i .env');
+            }
+
+            btn.innerHTML = originalText;
+            btn.disabled = false;
+        }
+
+        // Save article
+        document.getElementById('article-form').addEventListener('submit', async (e) => {
+            e.preventDefault();
+
+            const data = {
+                title: document.getElementById('title').value,
+                slug: document.getElementById('slug').value,
+                category: document.getElementById('category').value,
+                summary: document.getElementById('summary').value,
+                content: document.getElementById('content').value,
+                is_published: document.getElementById('is_published').value === '1',
+                seo_title: document.getElementById('seo_title').value,
+                seo_description: document.getElementById('seo_description').value,
+                seo_keywords: document.getElementById('seo_keywords').value,
+                aeo_question: document.getElementById('aeo_question').value,
+                aeo_answer: document.getElementById('aeo_answer').value,
+                aeo_schema_type: document.getElementById('aeo_schema_type').value
+            };
+
+            try {
+                const url = editingId 
+                    ? `/api/admin/articles/${editingId}`
+                    : '/api/admin/articles';
+                
+                const res = await fetch(url, {
+                    method: editingId ? 'PUT' : 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify(data)
+                });
+
+                const result = await res.json();
+
+                if (result.success || result.articleId) {
+                    closeModal();
+                    loadArticles();
+                    alert('✅ Artikkel lagret!');
+                } else {
+                    alert('Feil: ' + (result.error || 'Kunne ikke lagre'));
+                }
+            } catch (error) {
+                console.error('Save error:', error);
+                alert('Kunne ikke lagre artikkelen');
+            }
+        });
+
+        // Delete article
+        async function deleteArticle(id) {
+            if (!confirm('Er du sikker på at du vil slette denne artikkelen?')) {
+                return;
+            }
+
+            try {
+                const res = await fetch(`/api/admin/articles/${id}`, {
+                    method: 'DELETE'
+                });
+
+                if (res.ok) {
+                    loadArticles();
+                } else {
+                    alert('Kunne ikke slette artikkelen');
+                }
+            } catch (error) {
+                console.error('Delete error:', error);
+            }
+        }
+
+        // Auto-generate slug from title
+        document.getElementById('title').addEventListener('input', (e) => {
+            if (!editingId) {
+                const slug = e.target.value
+                    .toLowerCase()
+                    .replace(/æ/g, 'ae')
+                    .replace(/ø/g, 'o')
+                    .replace(/å/g, 'a')
+                    .replace(/[^a-z0-9]+/g, '-')
+                    .replace(/^-|-$/g, '');
+                document.getElementById('slug').value = slug;
+            }
+        });
+
+        async function logout() {
+            try {
+                await fetch('/api/admin/logout', { method: 'POST' });
+                window.location.href = '/admin/';
+            } catch (error) {
+                console.error('Logout error:', error);
+            }
+        }
+
+        // Initialize
+        loadArticles();
+    </script>
+</body>
+</html>

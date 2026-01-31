@@ -1,0 +1,199 @@
+<!DOCTYPE html>
+<html lang="no">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Dashboard - Admin</title>
+    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/@picocss/pico@1/css/pico.min.css">
+    <style>
+        .stats-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(250px, 1fr));
+            gap: 1.5rem;
+            margin: 2rem 0;
+        }
+        .stat-card {
+            background: linear-gradient(135deg, #8DC99C 0%, #5a9a6a 100%);
+            color: white;
+            padding: 1.5rem;
+            border-radius: 8px;
+            text-align: center;
+        }
+        .stat-card h3 {
+            color: white;
+            margin: 0;
+            font-size: 2.5rem;
+        }
+        .stat-card p {
+            margin: 0.5rem 0 0 0;
+            opacity: 0.9;
+        }
+        .recent-orders {
+            background: #f8f9fa;
+            padding: 1.5rem;
+            border-radius: 8px;
+        }
+        .order-row {
+            display: grid;
+            grid-template-columns: 1fr 1fr 100px 100px;
+            gap: 1rem;
+            padding: 0.8rem;
+            border-bottom: 1px solid #ddd;
+            align-items: center;
+        }
+        .order-row:hover {
+            background: white;
+        }
+        .status-badge {
+            padding: 0.3rem 0.8rem;
+            border-radius: 4px;
+            font-size: 0.85rem;
+            text-align: center;
+        }
+        .status-completed { background: #27ae60; color: white; }
+        .status-pending { background: #f39c12; color: white; }
+        .status-failed { background: #e74c3c; color: white; }
+    </style>
+</head>
+<body>
+    <nav class="container-fluid">
+        <ul>
+            <li><strong>🔐 Admin Panel</strong></li>
+        </ul>
+        <ul>
+            <li><a href="/admin/dashboard.html">Dashboard</a></li>
+            <li><a href="/admin/products.html">Produkter</a></li>
+            <li><a href="/admin/articles.html">Artikler</a></li>
+            <li><a href="/admin/orders.html">Bestillinger</a></li>
+            <li><a href="#" onclick="logout()">Logg ut</a></li>
+        </ul>
+    </nav>
+
+    <main class="container">
+        <h1>Dashboard</h1>
+
+        <div class="stats-grid" id="stats">
+            <div class="stat-card">
+                <h3 id="total-sales">-</h3>
+                <p>Totalt salg (NOK)</p>
+            </div>
+            <div class="stat-card">
+                <h3 id="total-orders">-</h3>
+                <p>Antall bestillinger</p>
+            </div>
+            <div class="stat-card">
+                <h3 id="pending-orders">-</h3>
+                <p>Ventende bestillinger</p>
+            </div>
+            <div class="stat-card">
+                <h3 id="low-stock-count">-</h3>
+                <p>Produkter med lav beholdning</p>
+            </div>
+        </div>
+
+        <div class="grid">
+            <div>
+                <div class="recent-orders">
+                    <h2>Siste bestillinger</h2>
+                    <div id="recent-orders">
+                        <p>Laster...</p>
+                    </div>
+                </div>
+            </div>
+
+            <div>
+                <div class="recent-orders">
+                    <h2>Topp produkter</h2>
+                    <div id="top-products">
+                        <p>Laster...</p>
+                    </div>
+                </div>
+
+                <div class="recent-orders" style="margin-top: 1rem;">
+                    <h2>Lav beholdning</h2>
+                    <div id="low-stock">
+                        <p>Laster...</p>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </main>
+
+    <script>
+        // Check authentication
+        fetch('/api/admin/check')
+            .then(res => res.json())
+            .then(data => {
+                if (!data.authenticated) {
+                    window.location.href = '/admin/';
+                }
+            });
+
+        async function loadAnalytics() {
+            try {
+                const res = await fetch('/api/admin/analytics');
+                const data = await res.json();
+
+                // Update stats
+                document.getElementById('total-sales').textContent = data.totalSales.toFixed(2);
+                
+                const totalOrders = data.ordersByStatus.reduce((sum, s) => sum + s.count, 0);
+                document.getElementById('total-orders').textContent = totalOrders;
+
+                const pending = data.ordersByStatus.find(s => s.order_status === 'processing');
+                document.getElementById('pending-orders').textContent = pending ? pending.count : 0;
+
+                document.getElementById('low-stock-count').textContent = data.lowStock.length;
+
+                // Recent orders
+                const ordersHtml = data.recentOrders.map(order => {
+                    const statusClass = order.payment_status === 'completed' ? 'status-completed' : 
+                                       order.payment_status === 'pending' ? 'status-pending' : 'status-failed';
+                    
+                    return `
+                        <div class="order-row">
+                            <div><strong>${order.order_number}</strong></div>
+                            <div>${order.customer_name}</div>
+                            <div>${order.total_nok.toFixed(2)} NOK</div>
+                            <div><span class="status-badge ${statusClass}">${order.payment_status}</span></div>
+                        </div>
+                    `;
+                }).join('');
+                document.getElementById('recent-orders').innerHTML = ordersHtml || '<p>Ingen bestillinger ennå</p>';
+
+                // Top products
+                const productsHtml = data.topProducts.map(p => `
+                    <div style="padding: 0.5rem 0; border-bottom: 1px solid #ddd;">
+                        <strong>${p.name}</strong><br>
+                        <small>Solgt: ${p.total_sold} | Inntekt: ${p.revenue.toFixed(2)} NOK</small>
+                    </div>
+                `).join('');
+                document.getElementById('top-products').innerHTML = productsHtml || '<p>Ingen salg ennå</p>';
+
+                // Low stock
+                const lowStockHtml = data.lowStock.map(p => `
+                    <div style="padding: 0.5rem 0; border-bottom: 1px solid #ddd;">
+                        <strong>${p.name}</strong><br>
+                        <small style="color: #e74c3c;">Beholdning: ${p.stock}</small>
+                    </div>
+                `).join('');
+                document.getElementById('low-stock').innerHTML = lowStockHtml || '<p>Ingen produkter med lav beholdning</p>';
+
+            } catch (error) {
+                console.error('Failed to load analytics:', error);
+            }
+        }
+
+        async function logout() {
+            try {
+                await fetch('/api/admin/logout', { method: 'POST' });
+                window.location.href = '/admin/';
+            } catch (error) {
+                console.error('Logout error:', error);
+            }
+        }
+
+        loadAnalytics();
+    </script>
+</body>
+</html>

@@ -1,0 +1,106 @@
+<!DOCTYPE html>
+<html lang="no">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Admin Login - Kryptohjelpen.no</title>
+    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/@picocss/pico@1/css/pico.min.css">
+    <style>
+        body {
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            min-height: 100vh;
+            background: linear-gradient(135deg, #8DC99C 0%, #5a9a6a 100%);
+        }
+        .login-card {
+            max-width: 400px;
+            width: 100%;
+            background: white;
+            padding: 2rem;
+            border-radius: 8px;
+            box-shadow: 0 10px 30px rgba(0,0,0,0.3);
+        }
+        .login-card h1 {
+            text-align: center;
+            margin-bottom: 2rem;
+        }
+    </style>
+</head>
+<body>
+    <div class="login-card">
+        <h1>🔐 Admin Login</h1>
+        <form id="login-form">
+            <label>
+                Brukernavn
+                <input type="text" id="username" required autofocus>
+            </label>
+
+            <label>
+                Passord
+                <input type="password" id="password" required>
+            </label>
+
+            <button type="submit" id="login-btn">Logg inn</button>
+
+            <div id="error-message" style="display: none; color: #e74c3c; text-align: center; margin-top: 1rem;">
+            </div>
+        </form>
+
+        <p style="text-align: center; margin-top: 2rem; font-size: 0.9rem;">
+            <a href="/">← Tilbake til butikk</a>
+        </p>
+    </div>
+
+    <script>
+        // Check if already logged in
+        fetch('/api/admin/check')
+            .then(res => res.json())
+            .then(data => {
+                if (data.authenticated) {
+                    window.location.href = '/admin/dashboard.html';
+                }
+            });
+
+        document.getElementById('login-form').addEventListener('submit', async (e) => {
+            e.preventDefault();
+
+            const btn = document.getElementById('login-btn');
+            const errorDiv = document.getElementById('error-message');
+
+            btn.disabled = true;
+            btn.setAttribute('aria-busy', 'true');
+            errorDiv.style.display = 'none';
+
+            try {
+                const res = await fetch('/api/admin/login', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({
+                        username: document.getElementById('username').value,
+                        password: document.getElementById('password').value
+                    })
+                });
+
+                const data = await res.json();
+
+                if (res.ok) {
+                    window.location.href = '/admin/dashboard.html';
+                } else {
+                    errorDiv.textContent = data.error || 'Innlogging mislyktes';
+                    errorDiv.style.display = 'block';
+                    btn.disabled = false;
+                    btn.removeAttribute('aria-busy');
+                }
+
+            } catch (error) {
+                console.error('Login error:', error);
+                errorDiv.textContent = 'Nettverksfeil. Prøv igjen.';
+                errorDiv.style.display = 'block';
+                btn.disabled = false;
+                btn.removeAttribute('aria-busy');
+            }
+        });
+    </script>
+</body>
+</html>
