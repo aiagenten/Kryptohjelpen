@@ -3,9 +3,14 @@ import OpenAI from 'openai';
 import { findNextAvailableSlots, formatSlots } from '@/lib/calendar';
 import supabase from '@/lib/supabase';
 
-const openai = new OpenAI({
-  apiKey: process.env.OPENAI_API_KEY,
-});
+// Create OpenAI client lazily at request time (not build time)
+function getOpenAIClient() {
+  const apiKey = process.env.OPENAI_API_KEY;
+  if (!apiKey) {
+    throw new Error('OPENAI_API_KEY is not configured');
+  }
+  return new OpenAI({ apiKey });
+}
 
 // Keywords that indicate crypto-specific questions
 const CRYPTO_KEYWORDS = [
@@ -137,6 +142,7 @@ export async function POST(request: NextRequest) {
       { role: 'user' as const, content: message },
     ];
 
+    const openai = getOpenAIClient();
     const completion = await openai.chat.completions.create({
       model: 'gpt-4o-mini',
       messages,
