@@ -106,17 +106,16 @@ export async function generateMetadata({ params }: { params: Promise<{ slug: str
   };
 }
 
-// Get inline image for article content
-function getInlineImage(category: string): string {
+// Get inline image for article content - use our AI-generated images
+function getInlineImage(slug: string): string {
   const images: Record<string, string> = {
-    'Sikkerhet': 'https://images.unsplash.com/photo-1526374965328-7f61d4dc18c5?w=800&h=400&fit=crop',
-    'Grunnleggende': 'https://images.unsplash.com/photo-1516245834210-c4c142787335?w=800&h=400&fit=crop',
-    'DeFi': 'https://images.unsplash.com/photo-1642790106117-e829e14a795f?w=800&h=400&fit=crop',
-    'NFT': 'https://images.unsplash.com/photo-1645731504601-3a3e97659ebc?w=800&h=400&fit=crop',
-    'Hardware': 'https://images.unsplash.com/photo-1625806786037-2af608423424?w=800&h=400&fit=crop',
-    'Web3': 'https://images.unsplash.com/photo-1644361566696-3d442b5b482a?w=800&h=400&fit=crop',
+    'kom-i-gang-med-krypto': '/images/articles/kom-i-gang-med-krypto.png',
+    'sikre-kryptovaluta': '/images/articles/sikre-kryptovaluta.png',
+    'hva-er-defi': '/images/articles/hva-er-defi.png',
+    'staking-forklart': '/images/articles/staking-forklart.png',
+    'krypto-skatt-norge': '/images/articles/krypto-skatt-norge.png',
   };
-  return images[category] || 'https://images.unsplash.com/photo-1518546305927-5a555bb7020d?w=800&h=400&fit=crop';
+  return images[slug] || '/images/articles/kom-i-gang-med-krypto.png';
 }
 
 export default async function ArticlePage({ params }: { params: Promise<{ slug: string }> }) {
@@ -148,7 +147,7 @@ export default async function ArticlePage({ params }: { params: Promise<{ slug: 
     return imageUrl;
   };
   const headerImage = getHeaderImage(article.image_url);
-  const inlineImage = getInlineImage(article.category);
+  const inlineImage = getInlineImage(article.slug);
 
   // JSON-LD Structured Data for SEO/AEO
   const articleSchema = {
