@@ -201,18 +201,6 @@ export default function Home() {
         </div>
       </section>
 
-      {/* Trustpilot Reviews Section */}
-      <section className="bg-gray-50 py-12 border-b border-gray-200">
-        <div className="max-w-7xl mx-auto px-8">
-          <h2 className="text-2xl font-bold text-gray-800 mb-8 text-center">Hva kundene sier</h2>
-          
-          {/* Official Trustpilot TrustBox Widget */}
-          <div className="flex justify-center">
-            <TrustpilotWidget />
-          </div>
-        </div>
-      </section>
-
       {/* Products Section */}
       <div className="max-w-7xl mx-auto px-8 py-12">
         {/* Section Header */}
@@ -296,6 +284,18 @@ export default function Home() {
           </div>
         )}
       </div>
+
+      {/* Trustpilot Reviews Section */}
+      <section className="bg-gray-50 py-12 border-b border-gray-200">
+        <div className="max-w-7xl mx-auto px-8">
+          <h2 className="text-2xl font-bold text-gray-800 mb-8 text-center">Hva kundene sier</h2>
+          
+          {/* Official Trustpilot TrustBox Widget */}
+          <div className="flex justify-center">
+            <TrustpilotWidget />
+          </div>
+        </div>
+      </section>
     </>
   );
 }
