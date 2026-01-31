@@ -205,48 +205,22 @@ export default function Home() {
         <div className="max-w-7xl mx-auto px-8">
           <h2 className="text-2xl font-bold text-gray-800 mb-8 text-center">Hva kundene sier</h2>
           
-          {/* Trustpilot Rating Card */}
-          <div className="max-w-2xl mx-auto">
-            <a 
-              href="https://no.trustpilot.com/review/kryptohjelpen.no" 
-              target="_blank" 
-              rel="noopener noreferrer"
-              className="block bg-white rounded-xl shadow-sm p-8 hover:shadow-md transition-shadow text-center"
+          {/* Official Trustpilot TrustBox Widget */}
+          <div className="flex justify-center">
+            <div 
+              className="trustpilot-widget" 
+              data-locale="nb-NO" 
+              data-template-id="53aa8807dec7e10d38f59f32"
+              data-businessunit-id="66dafd02a666ab140e2c4dbc"
+              data-style-height="150px"
+              data-style-width="100%"
+              data-theme="light"
+              data-stars="4,5"
             >
-              {/* Trustpilot Logo */}
-              <div className="flex items-center justify-center gap-2 mb-4">
-                <svg width="120" height="30" viewBox="0 0 126 31" xmlns="http://www.w3.org/2000/svg">
-                  <path d="M33.1 10.8h-6.9v15.6h3.1v-5.6h3.8c3.2 0 5.5-2.1 5.5-5s-2.3-5-5.5-5zm-.2 7.5h-3.6v-4.8h3.6c1.6 0 2.6.9 2.6 2.4s-1 2.4-2.6 2.4zm12.2-2.5c-1.8 0-3 .8-3.5 2v-1.8h-3v12.4h3.1v-6.4c0-1.8 1-2.8 2.5-2.8.4 0 .9.1 1.3.2v-3.4c-.3-.1-.9-.2-1.4-.2zm10.9 10.5v-3c-.4.1-.8.2-1.2.2-1.1 0-1.7-.6-1.7-1.7v-5.2h2.9v-2.6h-2.9V9.8h-3.1v4.2h-2v2.6h2v5.8c0 2.5 1.5 4 4.2 4 .7 0 1.3-.1 1.8-.1zm7.2.2c2.4 0 4.1-1.1 4.8-2.8l-2.6-1c-.3.9-1.1 1.4-2.2 1.4-1.4 0-2.4-.9-2.6-2.4h7.6v-.9c0-3.7-2.3-6-5.5-6-3.3 0-5.5 2.4-5.5 5.9 0 3.4 2.3 5.8 6 5.8zm-.4-9.4c1.2 0 2.1.8 2.3 2.1h-4.7c.3-1.3 1.2-2.1 2.4-2.1zm14.2 9.2l-.6-2.7c-.2.1-.5.1-.8.1-.8 0-1.3-.5-1.3-1.4v-9.3h3.1V10h-3.1V6.4h-3v3.6h-2v2.7h2V22c0 2.6 1.4 4.1 4 4.1.6 0 1.2-.1 1.7-.2zm12.6 0v-8.6c0-2.6-1.7-4.4-4.7-4.4-2 0-3.6.8-4.4 2.3l2.4 1.4c.4-.9 1.1-1.3 2-1.3 1.2 0 1.8.6 1.8 1.7v.8c-.6-.3-1.5-.5-2.5-.5-2.5 0-4.3 1.3-4.3 3.6 0 2.1 1.6 3.6 4 3.6 1.4 0 2.5-.5 3-1.4v1.3h2.7v-.5zm-5-2.1c-1 0-1.6-.5-1.6-1.3 0-.8.7-1.3 1.9-1.3.8 0 1.5.2 2 .4-.1 1.3-1.1 2.2-2.3 2.2zm9.2 2.1V13h3.1v13.3h-3.1zm1.5-15c1 0 1.8-.8 1.8-1.8s-.8-1.8-1.8-1.8-1.8.8-1.8 1.8.8 1.8 1.8 1.8zm9.6 15.2c3.3 0 5.3-2 5.3-4.3 0-2.7-2.1-3.5-4.4-4-1.6-.4-2.3-.6-2.3-1.3 0-.6.5-1 1.5-1 1.1 0 1.8.5 2 1.4l2.7-1.1c-.5-1.8-2.1-3-4.6-3-2.8 0-4.7 1.6-4.7 3.9 0 2.5 1.9 3.4 4.1 3.9 1.7.4 2.6.6 2.6 1.4 0 .7-.6 1.1-1.7 1.1-1.4 0-2.3-.7-2.5-1.8l-2.8 1c.5 2.1 2.3 3.4 4.8 3.4zm12.2 0c2.4 0 4.1-1.1 4.8-2.8l-2.6-1c-.3.9-1.1 1.4-2.2 1.4-1.4 0-2.4-.9-2.6-2.4h7.6v-.9c0-3.7-2.3-6-5.5-6-3.3 0-5.5 2.4-5.5 5.9 0 3.4 2.3 5.8 6 5.8zm-.4-9.4c1.2 0 2.1.8 2.3 2.1h-4.7c.3-1.3 1.2-2.1 2.4-2.1z" fill="#191919"/>
-                  <path d="M0 10.7l12.7-1.7 4.6-10.1 4.6 10.1 12.7 1.7-9.2 8.6 2.2 12.5-10.3-5.6-10.3 5.6 2.2-12.5L0 10.7z" fill="#00B67A"/>
-                  <path d="M25.5 22.3l-1-3.3-7.2 5.3 8.2-2z" fill="#005128"/>
-                </svg>
-              </div>
-              
-              {/* Stars */}
-              <div className="flex justify-center gap-1 mb-3">
-                {[1,2,3,4].map((i) => (
-                  <svg key={i} width="24" height="24" viewBox="0 0 24 24" fill="#00B67A">
-                    <path d="M12 2l3.09 6.26L22 9.27l-5 4.87 1.18 6.88L12 17.77l-6.18 3.25L7 14.14 2 9.27l6.91-1.01L12 2z"/>
-                  </svg>
-                ))}
-                <svg width="24" height="24" viewBox="0 0 24 24">
-                  <defs>
-                    <linearGradient id="half">
-                      <stop offset="50%" stopColor="#00B67A"/>
-                      <stop offset="50%" stopColor="#dcdce6"/>
-                    </linearGradient>
-                  </defs>
-                  <path fill="url(#half)" d="M12 2l3.09 6.26L22 9.27l-5 4.87 1.18 6.88L12 17.77l-6.18 3.25L7 14.14 2 9.27l6.91-1.01L12 2z"/>
-                </svg>
-              </div>
-              
-              <p className="text-gray-800 font-semibold mb-1">Vurdert som «Bra»</p>
-              <p className="text-gray-500 text-sm mb-4">Basert på anmeldelser på Trustpilot</p>
-              
-              <span className="text-[var(--primary)] font-medium hover:underline">
-                Les anmeldelser på Trustpilot →
-              </span>
-            </a>
+              <a href="https://no.trustpilot.com/review/kryptohjelpen.no" target="_blank" rel="noopener noreferrer">
+                Trustpilot
+              </a>
+            </div>
           </div>
         </div>
       </section>
