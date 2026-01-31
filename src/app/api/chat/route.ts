@@ -106,7 +106,7 @@ export async function POST(request: NextRequest) {
       } catch (error) {
         console.error('Calendar error:', error);
         return NextResponse.json({
-          reply: 'Beklager, jeg kunne ikke sjekke kalenderen akkurat nå. Kontakt oss på support@kryptohjelpen.no for å booke.',
+          reply: 'Beklager, jeg kunne ikke sjekke kalenderen akkurat nå. Kontakt oss på post@kryptohjelpen.no for å booke.',
         });
       }
     }

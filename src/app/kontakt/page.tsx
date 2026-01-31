@@ -103,8 +103,8 @@ export default function Kontakt() {
                 <span className="text-[var(--primary)]"><EmailIcon /></span>
                 <div>
                   <h3 className="font-bold text-gray-800">E-post</h3>
-                  <a href="mailto:support@kryptohjelpen.no" className="text-[#8DC99C] hover:underline">
-                    support@kryptohjelpen.no
+                  <a href="mailto:post@kryptohjelpen.no" className="text-[#8DC99C] hover:underline">
+                    post@kryptohjelpen.no
                   </a>
                 </div>
               </div>

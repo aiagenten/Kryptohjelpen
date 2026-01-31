@@ -166,7 +166,7 @@ export default function VilkarPage() {
             </p>
             <div className="mt-4 p-4 bg-[#8DC99C]/10 rounded-lg">
               <p className="text-gray-700">
-                E-post: support@kryptohjelpen.no<br />
+                E-post: post@kryptohjelpen.no<br />
                 🌐 kryptohjelpen.no/kontakt
               </p>
             </div>

@@ -138,8 +138,16 @@ export default async function ArticlePage({ params }: { params: Promise<{ slug: 
   // Convert markdown to HTML
   const contentHtml = marked(article.content || '');
   
-  // Get images
-  const headerImage = article.image_url || getCategoryImage(article.category);
+  // Get images - use header version for article page
+  const getHeaderImage = (imageUrl: string | null) => {
+    if (!imageUrl) return getCategoryImage(article.category);
+    // Convert /images/articles/name.png to /images/articles/header-name.png
+    if (imageUrl.includes('/images/articles/') && !imageUrl.includes('header-')) {
+      return imageUrl.replace('/images/articles/', '/images/articles/header-');
+    }
+    return imageUrl;
+  };
+  const headerImage = getHeaderImage(article.image_url);
   const inlineImage = getInlineImage(article.category);
 
   // JSON-LD Structured Data for SEO/AEO
