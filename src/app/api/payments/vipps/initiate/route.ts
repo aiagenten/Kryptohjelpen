@@ -47,9 +47,10 @@ export async function POST(request: NextRequest) {
 
     const accessToken = await getAccessToken();
     
-    const siteUrl = process.env.SITE_URL || 'http://localhost:3000';
-    const callbackPrefix = `${siteUrl}/api/payments/vipps`;
-    const fallbackUrl = `${siteUrl}/order-confirmation?orderId=${orderId}`;
+    // Use request origin for dynamic URL (works with tunnels)
+    const origin = request.headers.get('origin') || request.headers.get('referer')?.replace(/\/$/, '').split('/').slice(0, 3).join('/') || process.env.SITE_URL || 'http://localhost:3000';
+    const callbackPrefix = `${origin}/api/payments/vipps`;
+    const fallbackUrl = `${origin}/order-confirmation?orderId=${orderId}`;
 
     const paymentRequest = {
       merchantInfo: {
@@ -105,7 +106,7 @@ export async function POST(request: NextRequest) {
   } catch (error) {
     console.error('Vipps initiate error:', error);
     return NextResponse.json(
-      { error: 'Internal server error' },
+      { error: 'Internal server error', details: error instanceof Error ? error.message : 'Unknown error' },
       { status: 500 }
     );
   }
