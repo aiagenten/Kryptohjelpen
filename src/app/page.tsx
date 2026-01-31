@@ -1,6 +1,7 @@
 'use client';
 
 import { useEffect, useState } from 'react';
+import TrustpilotWidget from '@/components/TrustpilotWidget';
 
 interface Product {
   id: number;
@@ -207,20 +208,7 @@ export default function Home() {
           
           {/* Official Trustpilot TrustBox Widget */}
           <div className="flex justify-center">
-            <div 
-              className="trustpilot-widget" 
-              data-locale="nb-NO" 
-              data-template-id="53aa8807dec7e10d38f59f32"
-              data-businessunit-id="66dafd02a666ab140e2c4dbc"
-              data-style-height="150px"
-              data-style-width="100%"
-              data-theme="light"
-              data-stars="4,5"
-            >
-              <a href="https://no.trustpilot.com/review/kryptohjelpen.no" target="_blank" rel="noopener noreferrer">
-                Trustpilot
-              </a>
-            </div>
+            <TrustpilotWidget />
           </div>
         </div>
       </section>

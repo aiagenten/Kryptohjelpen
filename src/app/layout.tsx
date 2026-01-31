@@ -20,12 +20,7 @@ export default function RootLayout({
   return (
     <html lang="no">
       <head>
-        {/* Trustpilot Widget Script */}
-        <script
-          type="text/javascript"
-          src="//widget.trustpilot.com/bootstrap/v5/tp.widget.bootstrap.min.js"
-          async
-        />
+        {/* Trustpilot script loaded by TrustpilotWidget component */}
       </head>
       <body className={inter.className}>
         <Nav />
