@@ -14,8 +14,7 @@ const nextConfig: NextConfig = {
   typescript: {
     ignoreBuildErrors: true,
   },
-  // Server-side external packages
-  serverExternalPackages: ['better-sqlite3', 'bcrypt'],
+  // Server-side external packages (none needed for Supabase)
 };
 
 export default nextConfig;
