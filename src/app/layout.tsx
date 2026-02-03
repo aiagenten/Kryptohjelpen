@@ -1,5 +1,6 @@
 import type { Metadata } from "next";
 import { Inter } from "next/font/google";
+import Script from "next/script";
 import "./globals.css";
 import Nav from "@/components/Nav";
 import Footer from "@/components/Footer";
@@ -27,6 +28,13 @@ export default function RootLayout({
         <main>{children}</main>
         <Footer />
         <Chatbot />
+        {/* Site Monitor */}
+        <Script 
+          src="https://site-monitor-production-54bc.up.railway.app/dist/monitor.min.js"
+          data-site-id="kryptohjelpen.no"
+          data-api-endpoints="/api/health"
+          strategy="lazyOnload"
+        />
       </body>
     </html>
   );
