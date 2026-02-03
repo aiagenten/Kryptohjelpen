@@ -63,16 +63,13 @@ body {
 
 /* Hero Section */
 .hero {
-  background: 
-    linear-gradient(135deg, rgba(109, 163, 122, 0.92) 0%, rgba(77, 130, 90, 0.92) 100%),
-    url('https://images.unsplash.com/photo-1573497019940-1c28c88b4f3e?w=1920&auto=format&fit=crop&q=80');
-  background-size: cover;
-  background-position: center top;
-  @apply text-white py-16 px-8 text-center relative overflow-hidden;
+  background: linear-gradient(135deg, var(--gradient-start) 0%, var(--gradient-end) 100%);
+  @apply text-white py-16 px-8 text-center overflow-hidden;
   min-height: 400px;
   display: flex;
   align-items: center;
   justify-content: center;
+  position: relative;
 }
 
 .hero::before {
@@ -81,7 +78,7 @@ body {
   background:
     radial-gradient(circle at 20% 50%, rgba(255,255,255,0.1) 0%, transparent 50%),
     radial-gradient(circle at 80% 50%, rgba(255,255,255,0.1) 0%, transparent 50%);
-  opacity: 0.2;
+  opacity: 0.3;
 }
 
 .hero-feature {

@@ -133,8 +133,24 @@ export default function Home() {
   return (
     <>
       {/* Hero Section */}
-      <div className="hero">
-        <div className="relative max-w-4xl mx-auto">
+      <div className="hero" style={{ position: 'relative' }}>
+        {/* Background Image */}
+        <img 
+          src="https://images.unsplash.com/photo-1551434678-e076c223a692?w=1920&auto=format&fit=crop&q=80"
+          alt=""
+          style={{
+            position: 'absolute',
+            top: 0,
+            left: 0,
+            width: '100%',
+            height: '100%',
+            objectFit: 'cover',
+            objectPosition: 'center center',
+            opacity: 0.15,
+            zIndex: 0
+          }}
+        />
+        <div style={{ position: 'relative', zIndex: 10 }} className="max-w-4xl mx-auto">
           <h1 className="text-4xl font-extrabold mb-4 leading-tight" style={{ textShadow: '0 2px 4px rgba(0, 0, 0, 0.3)' }}>
             Kryptohjelpen - Din guide til Web3
           </h1>
