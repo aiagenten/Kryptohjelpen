@@ -86,9 +86,15 @@ export default function Nav() {
                 </span>
               </Link>
             ) : (
-              <Link href="/logg-inn" className="px-4 py-2 bg-[#8DC99C] text-white rounded-lg font-medium hover:bg-[#7ab889] transition-colors">
-                Logg inn
-              </Link>
+              <a
+                href="/api/auth/vipps"
+                className="px-4 py-2 bg-[#ff5b24] hover:bg-[#e54d1c] text-white rounded-lg font-medium transition-colors flex items-center gap-2"
+              >
+                <svg width="20" height="20" viewBox="0 0 24 24" fill="currentColor">
+                  <path d="M12 2C6.48 2 2 6.48 2 12s4.48 10 10 10 10-4.48 10-10S17.52 2 12 2zm-2 15l-5-5 1.41-1.41L10 14.17l7.59-7.59L19 8l-9 9z"/>
+                </svg>
+                Logg inn med Vipps
+              </a>
             )}
           </div>
 
@@ -135,9 +141,13 @@ export default function Nav() {
                   Min side
                 </Link>
               ) : (
-                <Link href="/logg-inn" onClick={() => setMobileMenuOpen(false)} className="px-3 py-2 bg-[#8DC99C] text-white rounded-lg text-center font-medium">
-                  Logg inn
-                </Link>
+                <a
+                  href="/api/auth/vipps"
+                  onClick={() => setMobileMenuOpen(false)}
+                  className="px-3 py-3 bg-[#ff5b24] text-white rounded-lg text-center font-medium flex items-center justify-center gap-2"
+                >
+                  Logg inn med Vipps
+                </a>
               )}
             </div>
           </div>

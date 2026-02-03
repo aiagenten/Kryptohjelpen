@@ -6,7 +6,7 @@ import { Suspense } from 'react';
 
 function OrderConfirmationContent() {
   const searchParams = useSearchParams();
-  const orderNumber = searchParams.get('order') || 'UNKNOWN';
+  const orderNumber = searchParams.get('order') || searchParams.get('orderId') || 'UNKNOWN';
 
   return (
     <div className="max-w-2xl mx-auto px-8 py-16 text-center">
