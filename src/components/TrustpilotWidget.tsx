@@ -35,8 +35,16 @@ export default function TrustpilotWidget() {
       data-theme="light"
       data-stars="4,5"
     >
-      <a href="https://no.trustpilot.com/review/kryptohjelpen.no" target="_blank" rel="noopener noreferrer">
-        Trustpilot
+      <a 
+        href="https://www.trustpilot.com/review/kryptohjelpen.no" 
+        target="_blank" 
+        rel="noopener noreferrer"
+        className="inline-flex items-center gap-2 px-6 py-3 bg-[#00b67a] text-white font-semibold rounded-lg hover:bg-[#009567] transition-colors"
+      >
+        <svg width="24" height="24" viewBox="0 0 24 24" fill="currentColor">
+          <path d="M12 17.27L18.18 21l-1.64-7.03L22 9.24l-7.19-.61L12 2 9.19 8.63 2 9.24l5.46 4.73L5.82 21z"/>
+        </svg>
+        Se våre anmeldelser på Trustpilot
       </a>
     </div>
   );
