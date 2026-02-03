@@ -2,9 +2,9 @@ import { NextRequest, NextResponse } from 'next/server';
 import supabase from '@/lib/supabase';
 
 const VIPPS_CONFIG = {
-  clientId: process.env.VIPPS_LOGIN_CLIENT_ID!,
-  clientSecret: process.env.VIPPS_LOGIN_CLIENT_SECRET!,
-  subscriptionKey: process.env.VIPPS_LOGIN_SUBSCRIPTION_KEY!,
+  clientId: process.env.VIPPS_CLIENT_ID!,  // Use same as payment (MSN 823497)
+  clientSecret: process.env.VIPPS_CLIENT_SECRET!,
+  subscriptionKey: process.env.VIPPS_SUBSCRIPTION_KEY!,
   redirectUri: process.env.VIPPS_LOGIN_REDIRECT_URI!,
   mode: process.env.VIPPS_MODE || 'production',
 };
@@ -125,19 +125,17 @@ export async function GET(request: NextRequest) {
       customer = data;
     }
 
-    // Create session token
-    const sessionToken = Buffer.from(JSON.stringify({
+    // Create session (must match format used by /api/auth/login)
+    const session = {
       customerId: customer.id,
-      name: customer.name,
       email: customer.email,
-      phone: customer.phone,
-      exp: Date.now() + 7 * 24 * 60 * 60 * 1000, // 7 days
-    })).toString('base64');
+      name: customer.name,
+    };
 
     const response = NextResponse.redirect(new URL(returnUrl || '/', request.url));
 
-    // Set auth cookie
-    response.cookies.set('kh_session', sessionToken, {
+    // Set auth cookie (must match what /api/auth/me expects - plain JSON, not base64)
+    response.cookies.set('customer_session', JSON.stringify(session), {
       httpOnly: true,
       secure: process.env.NODE_ENV === 'production',
       sameSite: 'lax',

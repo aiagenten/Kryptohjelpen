@@ -2,7 +2,7 @@ import { NextRequest, NextResponse } from 'next/server';
 import { v4 as uuidv4 } from 'uuid';
 
 const VIPPS_CONFIG = {
-  clientId: process.env.VIPPS_LOGIN_CLIENT_ID!,
+  clientId: process.env.VIPPS_CLIENT_ID!,  // Use same as payment (MSN 823497)
   redirectUri: process.env.VIPPS_LOGIN_REDIRECT_URI!,
   mode: process.env.VIPPS_MODE || 'production',
 };
