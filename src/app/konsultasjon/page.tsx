@@ -64,7 +64,7 @@ export default function KonsultasjonPage() {
         headers: { 'Content-Type': 'application/json' },
         credentials: 'include',
         body: JSON.stringify({ 
-          productId: 10, // Personlig hjelp (60 min) - konsultasjon
+          productId: 2, // Personlig hjelp (60 min) - konsultasjon
           quantity: 1,
           metadata: {
             bookingDate: slot.start,
