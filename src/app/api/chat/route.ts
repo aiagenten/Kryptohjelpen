@@ -1,7 +1,32 @@
 import { NextRequest, NextResponse } from 'next/server';
 import OpenAI from 'openai';
-import { findNextAvailableSlots, formatSlots } from '@/lib/calendar';
 import supabase from '@/lib/supabase';
+
+const BOOKING_SERVICE_URL = process.env.BOOKING_SERVICE_URL || 'https://booking-service-production-d08e.up.railway.app';
+
+// Fetch slots from booking-service (single source of truth)
+async function getAvailableSlots(count: number = 3): Promise<{ start: string; end: string }[]> {
+  const response = await fetch(`${BOOKING_SERVICE_URL}/api/availability/kryptohjelpen?count=${count}`);
+  if (!response.ok) throw new Error('Booking service unavailable');
+  const data = await response.json();
+  return data.slots;
+}
+
+// Format slots for display
+function formatSlots(slots: { start: string; end: string }[]): string {
+  return slots
+    .map((slot, i) => {
+      const start = new Date(slot.start);
+      const end = new Date(slot.end);
+      const dateOpts: Intl.DateTimeFormatOptions = { weekday: 'long', day: 'numeric', month: 'long' };
+      const timeOpts: Intl.DateTimeFormatOptions = { hour: '2-digit', minute: '2-digit' };
+      const date = start.toLocaleDateString('nb-NO', dateOpts);
+      const startTime = start.toLocaleTimeString('nb-NO', timeOpts);
+      const endTime = end.toLocaleTimeString('nb-NO', timeOpts);
+      return `${i + 1}. ${date} kl. ${startTime} - ${endTime}`;
+    })
+    .join('\n');
+}
 
 // Create OpenAI client lazily at request time (not build time)
 function getOpenAIClient() {
@@ -96,7 +121,7 @@ export async function POST(request: NextRequest) {
     // Handle special actions
     if (action === 'check_availability') {
       try {
-        const slots = await findNextAvailableSlots(60, 3);
+        const slots = await getAvailableSlots(3);
         const formatted = formatSlots(slots);
         return NextResponse.json({
           reply: `Her er de neste ledige tidene for en konsultasjon:\n\n${formatted}\n\nVil du booke en av disse? Gå til kryptohjelpen.no/konsultasjon for å bestille.`,
