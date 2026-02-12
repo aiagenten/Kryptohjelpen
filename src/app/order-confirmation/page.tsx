@@ -28,8 +28,8 @@ function OrderConfirmationContent() {
           } else if (order.payment_status === 'failed' || order.order_status === 'cancelled') {
             setStatus('failed');
           } else {
-            // Payment might still be processing - retry a few times
-            if (retryCount < 5) {
+            // Payment might still be processing - retry up to 15 times (30 sec total)
+            if (retryCount < 15) {
               setTimeout(() => {
                 setRetryCount(r => r + 1);
               }, 2000);

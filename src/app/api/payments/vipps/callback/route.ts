@@ -1,5 +1,6 @@
 import { NextRequest, NextResponse } from 'next/server';
 import supabase from '@/lib/supabase';
+import { sendBookingConfirmation } from '@/lib/email';
 
 const BOOKING_SERVICE_URL = process.env.BOOKING_SERVICE_URL || 'https://booking-service-production-d08e.up.railway.app';
 
@@ -149,6 +150,23 @@ export async function POST(request: NextRequest) {
               }
             } catch (bookingError) {
               console.error('❌ Failed to call booking-service:', bookingError);
+            }
+
+            // Send confirmation email
+            if (customerEmail && customerEmail !== 'pending@vipps.no') {
+              const dateOpts: Intl.DateTimeFormatOptions = { weekday: 'long', day: 'numeric', month: 'long', year: 'numeric' };
+              const timeOpts: Intl.DateTimeFormatOptions = { hour: '2-digit', minute: '2-digit' };
+              const bookingDate = startTime.toLocaleDateString('nb-NO', dateOpts);
+              const bookingTimeStr = startTime.toLocaleTimeString('nb-NO', timeOpts);
+              
+              await sendBookingConfirmation({
+                customerName,
+                customerEmail,
+                orderNumber: reference,
+                bookingDate,
+                bookingTime: bookingTimeStr,
+                totalAmount: order?.total_nok || existingOrder?.total_nok || 0
+              });
             }
           } else {
             console.log('No booking_time found, skipping calendar event');
