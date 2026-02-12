@@ -3,7 +3,7 @@
 import Link from 'next/link';
 import { usePathname, useRouter } from 'next/navigation';
 import { useEffect, useState } from 'react';
-import { LayoutDashboard, Package, ShoppingCart, FileText, Globe, LogOut } from 'lucide-react';
+import { LayoutDashboard, Package, ShoppingCart, FileText, Globe, LogOut, Star } from 'lucide-react';
 
 export default function AdminLayout({ children }: { children: React.ReactNode }) {
   const pathname = usePathname();
@@ -55,9 +55,10 @@ export default function AdminLayout({ children }: { children: React.ReactNode })
 
   const navItems = [
     { href: '/admin', label: 'Dashboard', icon: LayoutDashboard },
-    { href: '/admin/products', label: 'Tjenester', icon: Package },
     { href: '/admin/orders', label: 'Ordrer', icon: ShoppingCart },
+    { href: '/admin/products', label: 'Tjenester', icon: Package },
     { href: '/admin/articles', label: 'Artikler', icon: FileText },
+    { href: '/admin/reviews', label: 'Anmeldelser', icon: Star },
   ];
 
   return (
