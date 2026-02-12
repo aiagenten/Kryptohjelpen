@@ -57,6 +57,9 @@ export async function POST(request: NextRequest) {
         currency: 'NOK',
         value: Math.round(amount * 100), // Vipps uses øre (cents)
       },
+      paymentMethod: {
+        type: 'WALLET',
+      },
       reference: orderId,
       userFlow: 'WEB_REDIRECT',
       returnUrl,
