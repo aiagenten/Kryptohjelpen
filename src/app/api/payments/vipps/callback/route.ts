@@ -56,13 +56,17 @@ export async function POST(request: NextRequest) {
       const paymentDetails = await getVippsPaymentDetails(reference, accessToken);
       console.log('Vipps payment details:', JSON.stringify(paymentDetails, null, 2));
 
-      // Extract user info if available
+      // Extract user info from ePayment v1 response
+      // Profile info is in paymentDetails.profile when scope was requested
       if (paymentDetails.profile) {
         const profile = paymentDetails.profile;
-        customerName = profile.name || profile.givenName + ' ' + profile.familyName || 'Vipps-kunde';
+        customerName = profile.name || `${profile.givenName || ''} ${profile.familyName || ''}`.trim() || 'Vipps-kunde';
         customerEmail = profile.email || '';
         customerPhone = profile.phoneNumber || '';
         vippsUserInfo = profile;
+        console.log('Extracted Vipps profile:', { customerName, customerEmail, customerPhone });
+      } else {
+        console.log('No profile in payment details. Full response:', JSON.stringify(paymentDetails, null, 2));
       }
 
       // Check payment state

@@ -49,29 +49,32 @@ export async function POST(request: NextRequest) {
     
     // Use request origin for dynamic URL (works with tunnels)
     const origin = request.headers.get('origin') || request.headers.get('referer')?.replace(/\/$/, '').split('/').slice(0, 3).join('/') || process.env.SITE_URL || 'http://localhost:3000';
-    const callbackPrefix = `${origin}/api/payments/vipps`;
-    const fallbackUrl = `${origin}/order-confirmation?orderId=${orderId}`;
+    const returnUrl = `${origin}/order-confirmation?orderId=${orderId}`;
 
+    // ePayment v1 API request with profile scope for user info
     const paymentRequest = {
-      merchantInfo: {
-        merchantSerialNumber: VIPPS_CONFIG.merchantSerialNumber,
-        callbackPrefix,
-        fallBack: fallbackUrl,
-        consentRemovalPrefix: `${callbackPrefix}/consent`,
-        paymentType: 'eComm Regular Payment',
+      amount: {
+        currency: 'NOK',
+        value: Math.round(amount * 100), // Vipps uses øre (cents)
       },
-      customerInfo: {
-        mobileNumber: phoneNumber || undefined,
+      reference: orderId,
+      userFlow: 'WEB_REDIRECT',
+      returnUrl,
+      paymentDescription: description || `Ordre - Kryptohjelpen.no`,
+      profile: {
+        scope: 'name phoneNumber email', // Request user info
       },
-      transaction: {
-        orderId,
-        amount: Math.round(amount * 100), // Vipps uses øre (cents)
-        transactionText: description || `Ordre ${orderId} - Kryptohjelpen.no`,
-      },
+      ...(phoneNumber && {
+        customer: {
+          phoneNumber: phoneNumber.replace(/\s/g, ''),
+        },
+      }),
     };
 
+    console.log('Initiating ePayment v1:', JSON.stringify(paymentRequest, null, 2));
+
     const response = await fetch(
-      `${BASE_URL}/ecomm/v2/payments`,
+      `${BASE_URL}/epayment/v1/payments`,
       {
         method: 'POST',
         headers: {
@@ -80,7 +83,8 @@ export async function POST(request: NextRequest) {
           'Merchant-Serial-Number': VIPPS_CONFIG.merchantSerialNumber,
           'Content-Type': 'application/json',
           'Vipps-System-Name': 'Kryptohjelpen',
-          'Vipps-System-Version': '1.0.0',
+          'Vipps-System-Version': '2.0.0',
+          'Idempotency-Key': orderId,
         },
         body: JSON.stringify(paymentRequest),
       }
@@ -88,7 +92,7 @@ export async function POST(request: NextRequest) {
 
     if (!response.ok) {
       const error = await response.text();
-      console.error('Vipps payment error:', error);
+      console.error('Vipps ePayment error:', error);
       return NextResponse.json(
         { error: 'Failed to initiate Vipps payment', details: error },
         { status: 500 }
@@ -96,11 +100,12 @@ export async function POST(request: NextRequest) {
     }
 
     const paymentResponse = await response.json();
+    console.log('ePayment response:', JSON.stringify(paymentResponse, null, 2));
     
     return NextResponse.json({
       success: true,
       orderId,
-      vippsUrl: paymentResponse.url,
+      vippsUrl: paymentResponse.redirectUrl,
     });
 
   } catch (error) {
