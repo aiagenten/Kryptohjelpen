@@ -58,17 +58,19 @@ export async function POST(request: NextRequest) {
       console.log('Vipps payment details:', JSON.stringify(paymentDetails, null, 2));
 
       // Extract user info from ePayment v1 response
-      // Profile info is in paymentDetails.profile when scope was requested
-      if (paymentDetails.profile) {
-        const profile = paymentDetails.profile;
-        customerName = profile.name || `${profile.givenName || ''} ${profile.familyName || ''}`.trim() || 'Vipps-kunde';
-        customerEmail = profile.email || '';
-        customerPhone = profile.phoneNumber || '';
-        vippsUserInfo = profile;
-        console.log('Extracted Vipps profile:', { customerName, customerEmail, customerPhone });
-      } else {
-        console.log('No profile in payment details. Full response:', JSON.stringify(paymentDetails, null, 2));
-      }
+      // User info can be in paymentDetails.profile OR paymentDetails.userDetails
+      const profile = paymentDetails.profile || {};
+      const userDetails = paymentDetails.userDetails || {};
+      
+      // Merge both sources (userDetails has better data)
+      customerName = userDetails.firstName && userDetails.lastName 
+        ? `${userDetails.firstName} ${userDetails.lastName}`
+        : profile.name || `${profile.givenName || ''} ${profile.familyName || ''}`.trim() || 'Vipps-kunde';
+      customerEmail = userDetails.email || profile.email || '';
+      customerPhone = userDetails.mobileNumber || profile.phoneNumber || '';
+      vippsUserInfo = { ...profile, ...userDetails };
+      
+      console.log('Extracted Vipps user info:', { customerName, customerEmail, customerPhone });
 
       // Check payment state
       const state = paymentDetails.state;
