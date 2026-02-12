@@ -1,6 +1,7 @@
 import { NextRequest, NextResponse } from 'next/server';
 import supabase from '@/lib/supabase';
-import { createCalendarEvent } from '@/lib/google-calendar';
+
+const BOOKING_SERVICE_URL = process.env.BOOKING_SERVICE_URL || 'https://booking-service-production-d08e.up.railway.app';
 
 // Vipps API helper to get access token
 async function getVippsAccessToken(): Promise<string> {
@@ -101,33 +102,51 @@ export async function POST(request: NextRequest) {
         } else {
           console.log(`Order ${reference} marked as paid. Customer: ${customerName}`);
           
-          // Create calendar event if booking_time exists
+          // Create calendar event via booking-service if booking_time exists
           const bookingTime = order?.booking_time || existingOrder?.booking_time;
           if (bookingTime) {
-            console.log('Creating calendar event for booking:', bookingTime);
+            console.log('Creating calendar event via booking-service:', bookingTime);
             
-            const calendarResult = await createCalendarEvent({
-              customerName,
-              customerEmail,
-              customerPhone,
-              bookingTime,
-              duration: 60,
-              description: `Betalt via Vipps\nOrdre: ${reference}`
-            });
-
-            if (calendarResult.success) {
-              // Save calendar event ID to order
-              await supabase
-                .from('orders')
-                .update({ 
-                  calendar_event_id: calendarResult.eventId,
-                  notes: `Kalender: ${calendarResult.eventLink}`
+            const startTime = new Date(bookingTime);
+            const endTime = new Date(startTime.getTime() + 60 * 60 * 1000); // 60 min
+            
+            try {
+              const bookingResponse = await fetch(`${BOOKING_SERVICE_URL}/api/book`, {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({
+                  service: 'kryptohjelpen',
+                  slot: {
+                    start: startTime.toISOString(),
+                    end: endTime.toISOString()
+                  },
+                  customer: {
+                    name: customerName,
+                    email: customerEmail,
+                    phone: customerPhone,
+                    message: `Vipps ordre: ${reference}`
+                  }
                 })
-                .eq('order_number', reference);
+              });
               
-              console.log('✅ Calendar event created and linked to order');
-            } else {
-              console.error('❌ Failed to create calendar event:', calendarResult.error);
+              const bookingResult = await bookingResponse.json();
+              
+              if (bookingResult.success) {
+                // Save calendar event ID to order
+                await supabase
+                  .from('orders')
+                  .update({ 
+                    calendar_event_id: bookingResult.booking?.calendarEventId,
+                    notes: `Kalender: ${bookingResult.booking?.calendarLink || 'Opprettet'}`
+                  })
+                  .eq('order_number', reference);
+                
+                console.log('✅ Calendar event created via booking-service');
+              } else {
+                console.error('❌ Booking-service error:', bookingResult.error);
+              }
+            } catch (bookingError) {
+              console.error('❌ Failed to call booking-service:', bookingError);
             }
           } else {
             console.log('No booking_time found, skipping calendar event');
