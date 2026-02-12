@@ -32,7 +32,7 @@ export default function PersonvernPage() {
             <div className="mt-4 p-4 bg-gray-50 rounded-lg">
               <p className="text-gray-700">
                 <strong>Kontakt:</strong><br />
-                E-post: kontakt@kryptohjelpen.no<br />
+                E-post: post@kryptohjelpen.no<br />
                 Adresse: Norge
               </p>
             </div>
@@ -111,7 +111,7 @@ export default function PersonvernPage() {
               <li><strong>Innsigelse:</strong> Protestere mot behandling basert på berettiget interesse</li>
             </ul>
             <p className="text-gray-700 leading-relaxed mt-4">
-              For å utøve dine rettigheter, kontakt oss på personvern@kryptohjelpen.no
+              For å utøve dine rettigheter, kontakt oss på post@kryptohjelpen.no
             </p>
           </section>
 
@@ -148,7 +148,7 @@ export default function PersonvernPage() {
             </p>
             <div className="mt-4 p-4 bg-[#8DC99C]/10 rounded-lg">
               <p className="text-gray-700">
-                E-post: personvern@kryptohjelpen.no<br />
+                E-post: post@kryptohjelpen.no<br />
                 🌐 kryptohjelpen.no/kontakt
               </p>
             </div>

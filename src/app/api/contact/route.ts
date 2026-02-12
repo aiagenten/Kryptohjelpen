@@ -34,7 +34,7 @@ export async function POST(request: NextRequest) {
       try {
         await resend.emails.send({
           from: 'Kryptohjelpen <noreply@kryptohjelpen.no>',
-          to: ['kontakt@kryptohjelpen.no'],
+          to: ['post@kryptohjelpen.no'],
           replyTo: email,
           subject: `[Kontaktskjema] ${subject || 'Ny henvendelse'} fra ${name}`,
           html: `
