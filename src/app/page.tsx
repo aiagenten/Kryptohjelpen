@@ -1,7 +1,7 @@
 'use client';
 
 import { useEffect, useState } from 'react';
-import TrustpilotWidget from '@/components/TrustpilotWidget';
+import TrustpilotReviews from '@/components/TrustpilotReviews';
 
 interface Product {
   id: number;
@@ -308,7 +308,7 @@ export default function Home() {
           
           {/* Official Trustpilot TrustBox Widget */}
           <div className="flex justify-center">
-            <TrustpilotWidget />
+            <TrustpilotReviews />
           </div>
         </div>
       </section>
