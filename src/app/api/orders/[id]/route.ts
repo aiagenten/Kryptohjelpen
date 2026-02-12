@@ -13,11 +13,18 @@ export async function GET(
     }
 
     // Try to find order by id or order_number
-    const { data: order, error } = await supabase
+    let query = supabase
       .from('orders')
-      .select('id, order_number, order_status, payment_status, total_amount, created_at')
-      .or(`id.eq.${id},order_number.eq.${id}`)
-      .single();
+      .select('id, order_number, order_status, payment_status, total_nok, created_at');
+    
+    // Check if id is numeric or order_number format
+    if (/^\d+$/.test(id)) {
+      query = query.eq('id', parseInt(id));
+    } else {
+      query = query.eq('order_number', id);
+    }
+    
+    const { data: order, error } = await query.single();
 
     if (error || !order) {
       return NextResponse.json({ error: 'Order not found' }, { status: 404 });
