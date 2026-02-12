@@ -4,7 +4,7 @@ import supabase from '@/lib/supabase';
 export async function POST(request: NextRequest) {
   try {
     const body = await request.json();
-    const { items, total, paymentMethod, customerEmail, customerName, customerPhone } = body;
+    const { items, total, paymentMethod, customerEmail, customerName, customerPhone, bookingTime } = body;
 
     if (!items || items.length === 0) {
       return NextResponse.json({ error: 'No items in order' }, { status: 400 });
@@ -24,7 +24,8 @@ export async function POST(request: NextRequest) {
         total_nok: total,
         payment_method: paymentMethod || 'vipps',
         payment_status: 'pending',
-        order_status: 'processing'
+        order_status: 'processing',
+        booking_time: bookingTime || null
       })
       .select()
       .single();
@@ -56,7 +57,8 @@ export async function POST(request: NextRequest) {
     const response = NextResponse.json({
       success: true,
       orderId: order.id,
-      orderNumber: orderNumber
+      orderNumber: orderNumber,
+      bookingTime: order.booking_time
     });
     
     response.cookies.set('cart', JSON.stringify({ items: [], total: 0 }), {

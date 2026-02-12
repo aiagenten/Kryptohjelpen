@@ -24,6 +24,12 @@ interface CryptoInfo {
   networks: Array<{ id: string; name: string; symbol: string }>;
 }
 
+interface BookingInfo {
+  slot: { start: string; end: string };
+  displayDate: string;
+  displayTime: string;
+}
+
 // Static fallback networks (same as API)
 const AVAILABLE_NETWORKS = [
   { id: 'ethereum', name: 'Ethereum', symbol: 'ETH' },
@@ -42,6 +48,9 @@ export default function CheckoutPage() {
   const [error, setError] = useState('');
   const [paymentMethod, setPaymentMethod] = useState<'vipps' | 'crypto'>('vipps');
   
+  // Booking state
+  const [bookingInfo, setBookingInfo] = useState<BookingInfo | null>(null);
+  
   // Crypto state
   const [selectedNetwork, setSelectedNetwork] = useState('polygon');
   const [cryptoInfo, setCryptoInfo] = useState<CryptoInfo | null>(null);
@@ -51,6 +60,7 @@ export default function CheckoutPage() {
 
   useEffect(() => {
     loadCart();
+    loadBookingInfo();
   }, []);
 
   useEffect(() => {
@@ -75,6 +85,18 @@ export default function CheckoutPage() {
     }
   };
 
+  const loadBookingInfo = () => {
+    try {
+      const stored = localStorage.getItem('consultationBooking');
+      if (stored) {
+        const booking = JSON.parse(stored);
+        setBookingInfo(booking);
+      }
+    } catch (err) {
+      console.error('Failed to load booking info:', err);
+    }
+  };
+
   const loadCryptoInfo = async () => {
     try {
       const res = await fetch(`/api/payments/crypto?amount=${cart.total}&network=${selectedNetwork}`);
@@ -93,7 +115,8 @@ export default function CheckoutPage() {
       body: JSON.stringify({
         items: cart.items,
         total: cart.total,
-        paymentMethod: paymentMethod === 'crypto' ? `crypto-${selectedNetwork}` : 'vipps'
+        paymentMethod: paymentMethod === 'crypto' ? `crypto-${selectedNetwork}` : 'vipps',
+        bookingTime: bookingInfo?.slot?.start || null
       })
     });
 
@@ -102,6 +125,10 @@ export default function CheckoutPage() {
     }
 
     const orderData = await orderRes.json();
+    
+    // Clear booking info after successful order
+    localStorage.removeItem('consultationBooking');
+    
     return orderData.orderId || orderData.id;
   };
 
@@ -119,7 +146,8 @@ export default function CheckoutPage() {
         body: JSON.stringify({
           amount: cart.total,
           orderId: newOrderId.toString(),
-          description: cart.items.map(i => i.name).join(', ')
+          description: cart.items.map(i => i.name).join(', '),
+          bookingTime: bookingInfo?.slot?.start || null
         })
       });
 
@@ -189,6 +217,13 @@ export default function CheckoutPage() {
     navigator.clipboard.writeText(text);
   };
 
+  // Check if cart has consultation product
+  const hasConsultation = cart.items.some(item => 
+    item.name.toLowerCase().includes('konsultasjon') || 
+    item.name.toLowerCase().includes('hjelp') ||
+    item.product_id === 2
+  );
+
   if (loading) {
     return (
       <div className="max-w-4xl mx-auto px-8 py-16 text-center">
@@ -218,6 +253,37 @@ export default function CheckoutPage() {
             </div>
           ))}
         </div>
+        
+        {/* Booking Time Display */}
+        {bookingInfo && (
+          <div className="bg-blue-50 border border-blue-200 rounded-lg p-4 mb-4">
+            <div className="flex items-center gap-2 text-blue-800">
+              <span className="text-xl">📅</span>
+              <div>
+                <p className="font-medium">Valgt tidspunkt</p>
+                <p className="text-sm">{bookingInfo.displayDate} kl. {bookingInfo.displayTime}</p>
+              </div>
+            </div>
+          </div>
+        )}
+        
+        {/* Warning if consultation without booking time */}
+        {hasConsultation && !bookingInfo && (
+          <div className="bg-yellow-50 border border-yellow-200 rounded-lg p-4 mb-4">
+            <div className="flex items-center gap-2 text-yellow-800">
+              <span className="text-xl">⚠️</span>
+              <div>
+                <p className="font-medium">Mangler tidspunkt</p>
+                <p className="text-sm">
+                  <Link href="/konsultasjon" className="underline hover:no-underline">
+                    Velg tidspunkt for konsultasjonen
+                  </Link>
+                </p>
+              </div>
+            </div>
+          </div>
+        )}
+        
         <div className="border-t border-gray-200 pt-4">
           <div className="flex justify-between items-center">
             <span className="text-lg text-gray-600">Total</span>
