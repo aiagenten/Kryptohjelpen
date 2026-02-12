@@ -129,7 +129,11 @@ export default function CheckoutPage() {
     // Clear booking info after successful order
     localStorage.removeItem('consultationBooking');
     
-    return orderData.orderId || orderData.id;
+    // Return both orderId and orderNumber for different uses
+    return { 
+      orderId: orderData.orderId || orderData.id,
+      orderNumber: orderData.orderNumber 
+    };
   };
 
   const handleVippsPayment = async () => {
@@ -137,15 +141,16 @@ export default function CheckoutPage() {
     setError('');
 
     try {
-      const newOrderId = await createOrder();
+      const { orderId: newOrderId, orderNumber } = await createOrder();
       setOrderId(newOrderId);
 
+      // Use orderNumber as reference (Vipps ePayment v1 requires min 8 chars)
       const vippsRes = await fetch('/api/payments/vipps/initiate', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({
           amount: cart.total,
-          orderId: newOrderId.toString(),
+          orderId: orderNumber, // Use orderNumber (KH-xxx-XXX) not numeric ID
           description: cart.items.map(i => i.name).join(', '),
           bookingTime: bookingInfo?.slot?.start || null
         })
@@ -171,7 +176,7 @@ export default function CheckoutPage() {
     setError('');
 
     try {
-      const newOrderId = await createOrder();
+      const { orderId: newOrderId } = await createOrder();
       setOrderId(newOrderId.toString());
       setSubmitting(false);
       // Now show the crypto payment details - user will pay and enter txHash
