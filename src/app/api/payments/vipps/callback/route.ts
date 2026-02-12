@@ -1,5 +1,6 @@
 import { NextRequest, NextResponse } from 'next/server';
 import supabase from '@/lib/supabase';
+import { createCalendarEvent } from '@/lib/google-calendar';
 
 // Vipps API helper to get access token
 async function getVippsAccessToken(): Promise<string> {
@@ -38,7 +39,6 @@ export async function POST(request: NextRequest) {
 
     // Handle ePayment webhook format
     const reference = body.reference || body.orderId;
-    const pspReference = body.pspReference;
     
     if (!reference) {
       console.error('No reference in callback');
@@ -69,8 +69,15 @@ export async function POST(request: NextRequest) {
       const state = paymentDetails.state;
       
       if (state === 'AUTHORIZED' || state === 'CHARGED') {
-        // Payment successful
-        const { error } = await supabase
+        // Payment successful - get order first to check for booking_time
+        const { data: existingOrder } = await supabase
+          .from('orders')
+          .select('*')
+          .eq('order_number', reference)
+          .single();
+
+        // Update order status
+        const { data: order, error } = await supabase
           .from('orders')
           .update({
             order_status: 'paid',
@@ -81,15 +88,46 @@ export async function POST(request: NextRequest) {
             vipps_user_info: vippsUserInfo,
             updated_at: new Date().toISOString()
           })
-          .eq('order_number', reference);
+          .eq('order_number', reference)
+          .select()
+          .single();
 
         if (error) {
           console.error('Error updating order:', error);
         } else {
           console.log(`Order ${reference} marked as paid. Customer: ${customerName}`);
           
-          // TODO: Send notification to admin
-          // TODO: Create calendar event if booking_time exists
+          // Create calendar event if booking_time exists
+          const bookingTime = order?.booking_time || existingOrder?.booking_time;
+          if (bookingTime) {
+            console.log('Creating calendar event for booking:', bookingTime);
+            
+            const calendarResult = await createCalendarEvent({
+              customerName,
+              customerEmail,
+              customerPhone,
+              bookingTime,
+              duration: 60,
+              description: `Betalt via Vipps\nOrdre: ${reference}`
+            });
+
+            if (calendarResult.success) {
+              // Save calendar event ID to order
+              await supabase
+                .from('orders')
+                .update({ 
+                  calendar_event_id: calendarResult.eventId,
+                  notes: `Kalender: ${calendarResult.eventLink}`
+                })
+                .eq('order_number', reference);
+              
+              console.log('✅ Calendar event created and linked to order');
+            } else {
+              console.error('❌ Failed to create calendar event:', calendarResult.error);
+            }
+          } else {
+            console.log('No booking_time found, skipping calendar event');
+          }
         }
 
       } else if (state === 'ABORTED' || state === 'EXPIRED' || state === 'TERMINATED') {
@@ -112,7 +150,6 @@ export async function POST(request: NextRequest) {
 
     } catch (vippsError) {
       console.error('Error fetching Vipps details:', vippsError);
-      // Still try to update with basic info from callback
     }
 
     return NextResponse.json({ success: true });
