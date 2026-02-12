@@ -287,22 +287,32 @@
     <script>
         const API_BASE = '/api';
         
-        // Check auth
-        const token = localStorage.getItem('adminToken');
-        if (!token) {
-            window.location.href = '/admin/';
+        // Check auth via API (cookie-based)
+        async function checkAuth() {
+            try {
+                const res = await fetch('/api/admin/check');
+                const data = await res.json();
+                if (!data.authenticated) {
+                    window.location.href = '/admin/';
+                    return false;
+                }
+                return true;
+            } catch (e) {
+                window.location.href = '/admin/';
+                return false;
+            }
         }
 
         function logout() {
-            localStorage.removeItem('adminToken');
-            window.location.href = '/admin/';
+            fetch('/api/admin/logout', { method: 'POST' })
+                .finally(() => {
+                    window.location.href = '/admin/';
+                });
         }
 
         async function fetchWithAuth(url) {
             const response = await fetch(url, {
-                headers: {
-                    'Authorization': `Bearer ${token}`
-                }
+                credentials: 'include'
             });
             if (response.status === 401) {
                 logout();
@@ -393,7 +403,10 @@
             }
         }
 
-        loadDashboard();
+        // Check auth first, then load dashboard
+        checkAuth().then(ok => {
+            if (ok) loadDashboard();
+        });
     </script>
 </body>
 </html>
