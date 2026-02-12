@@ -127,17 +127,11 @@ export async function findNextAvailableSlots(durationMinutes: number = 60, count
   const now = new Date();
   const slotsPerDay = new Map<string, number>(); // Track slots per day
 
-  // Start from 11:00 (buffer time for morning activities)
+  // Minimum 1 day buffer - no same-day bookings
+  // Start from tomorrow at 11:00
   const checkTime = new Date(now);
-  checkTime.setMinutes(0, 0, 0);
-  if (checkTime.getHours() < 11) {
-    checkTime.setHours(11);
-  } else if (checkTime.getHours() >= 17) {
-    checkTime.setDate(checkTime.getDate() + 1);
-    checkTime.setHours(11);
-  } else {
-    checkTime.setHours(checkTime.getHours() + 1);
-  }
+  checkTime.setDate(checkTime.getDate() + 1); // Always start from tomorrow
+  checkTime.setHours(11, 0, 0, 0); // First slot at 11:00
 
   // Get events for next 14 days
   const endDate = new Date(now);
