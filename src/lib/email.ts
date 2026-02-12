@@ -33,7 +33,7 @@ export async function sendBookingConfirmation(data: BookingConfirmationData): Pr
           
           <!-- Header -->
           <tr>
-            <td style="background: linear-gradient(135deg, #7c3aed 0%, #a855f7 100%); padding: 40px 40px 30px; text-align: center;">
+            <td style="background: linear-gradient(135deg, #8DC99C 0%, #5a9a6a 100%); padding: 40px 40px 30px; text-align: center;">
               <h1 style="margin: 0; color: #ffffff; font-size: 28px; font-weight: 700;">Kryptohjelpen</h1>
               <p style="margin: 10px 0 0; color: rgba(255,255,255,0.9); font-size: 16px;">Teknisk veiledning for krypto & Web3</p>
             </td>
@@ -42,7 +42,7 @@ export async function sendBookingConfirmation(data: BookingConfirmationData): Pr
           <!-- Success Icon -->
           <tr>
             <td style="padding: 40px 40px 20px; text-align: center;">
-              <div style="width: 80px; height: 80px; background-color: #10b981; border-radius: 50%; margin: 0 auto; display: flex; align-items: center; justify-content: center;">
+              <div style="width: 80px; height: 80px; background-color: #8DC99C; border-radius: 50%; margin: 0 auto; display: flex; align-items: center; justify-content: center;">
                 <span style="color: #ffffff; font-size: 40px;">✓</span>
               </div>
             </td>
@@ -121,7 +121,7 @@ export async function sendBookingConfirmation(data: BookingConfirmationData): Pr
           <!-- CTA Button -->
           <tr>
             <td style="padding: 0 40px 40px; text-align: center;">
-              <a href="https://kryptohjelpen.no/min-side" style="display: inline-block; background: linear-gradient(135deg, #7c3aed 0%, #a855f7 100%); color: #ffffff; text-decoration: none; padding: 14px 32px; border-radius: 8px; font-weight: 600; font-size: 16px;">
+              <a href="https://kryptohjelpen.no/min-side" style="display: inline-block; background: linear-gradient(135deg, #8DC99C 0%, #5a9a6a 100%); color: #ffffff; text-decoration: none; padding: 14px 32px; border-radius: 8px; font-weight: 600; font-size: 16px;">
                 Se mine bestillinger
               </a>
             </td>
@@ -131,7 +131,7 @@ export async function sendBookingConfirmation(data: BookingConfirmationData): Pr
           <tr>
             <td style="background-color: #f9fafb; padding: 24px 40px; text-align: center; border-top: 1px solid #e5e7eb;">
               <p style="margin: 0 0 8px; color: #6b7280; font-size: 14px;">
-                Spørsmål? Kontakt oss på <a href="mailto:post@kryptohjelpen.no" style="color: #7c3aed; text-decoration: none;">post@kryptohjelpen.no</a>
+                Spørsmål? Kontakt oss på <a href="mailto:post@kryptohjelpen.no" style="color: #5a9a6a; text-decoration: none;">post@kryptohjelpen.no</a>
               </p>
               <p style="margin: 0; color: #9ca3af; font-size: 12px;">
                 © 2026 Kryptohjelpen.no - Teknisk veiledning, ikke investeringsråd
