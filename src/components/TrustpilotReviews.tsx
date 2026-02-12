@@ -1,26 +1,14 @@
 'use client';
 
-// Manuell Trustpilot-visning (oppdater anmeldelsene her)
-const reviews = [
-  {
-    name: 'Thomas K.',
-    rating: 5,
-    date: '2024-12-15',
-    text: 'Fantastisk hjelp med å sette opp krypto-wallet. Forklarte alt på en enkel og forståelig måte. Anbefales!',
-  },
-  {
-    name: 'Marte S.',
-    rating: 5,
-    date: '2024-11-20',
-    text: 'Veldig profesjonell og kunnskapsrik. Fikk god veiledning om sikkerhet og beste praksis.',
-  },
-  {
-    name: 'Erik L.',
-    rating: 5,
-    date: '2024-10-08',
-    text: 'Rask respons og grundig gjennomgang. Følte meg trygg på å komme i gang med krypto etterpå.',
-  },
-];
+import { useEffect, useState } from 'react';
+
+interface Review {
+  id: number;
+  name: string;
+  rating: number;
+  review_date: string;
+  text: string;
+}
 
 function StarRating({ rating }: { rating: number }) {
   return (
@@ -40,6 +28,37 @@ function StarRating({ rating }: { rating: number }) {
 }
 
 export default function TrustpilotReviews() {
+  const [reviews, setReviews] = useState<Review[]>([]);
+  const [loading, setLoading] = useState(true);
+
+  useEffect(() => {
+    fetch('/api/reviews')
+      .then(res => res.json())
+      .then(data => {
+        setReviews(data);
+        setLoading(false);
+      })
+      .catch(() => setLoading(false));
+  }, []);
+
+  if (loading) {
+    return (
+      <div className="grid md:grid-cols-3 gap-6">
+        {[1, 2, 3].map((i) => (
+          <div key={i} className="bg-white rounded-xl p-6 shadow-sm border border-gray-100 animate-pulse">
+            <div className="h-5 bg-gray-200 rounded w-24 mb-3"></div>
+            <div className="h-16 bg-gray-200 rounded mb-4"></div>
+            <div className="h-4 bg-gray-200 rounded w-20"></div>
+          </div>
+        ))}
+      </div>
+    );
+  }
+
+  if (reviews.length === 0) {
+    return null;
+  }
+
   return (
     <div className="space-y-6">
       {/* Trustpilot header */}
@@ -72,13 +91,13 @@ export default function TrustpilotReviews() {
 
       {/* Reviews grid */}
       <div className="grid md:grid-cols-3 gap-6">
-        {reviews.map((review, index) => (
-          <div key={index} className="bg-white rounded-xl p-6 shadow-sm border border-gray-100">
+        {reviews.slice(0, 3).map((review) => (
+          <div key={review.id} className="bg-white rounded-xl p-6 shadow-sm border border-gray-100">
             <StarRating rating={review.rating} />
             <p className="mt-3 text-gray-600 text-sm leading-relaxed">&ldquo;{review.text}&rdquo;</p>
             <div className="mt-4 flex items-center justify-between">
               <span className="font-medium text-gray-800">{review.name}</span>
-              <span className="text-xs text-gray-400">{new Date(review.date).toLocaleDateString('nb-NO')}</span>
+              <span className="text-xs text-gray-400">{new Date(review.review_date).toLocaleDateString('nb-NO')}</span>
             </div>
           </div>
         ))}
