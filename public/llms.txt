@@ -1,0 +1,36 @@
+# Kryptohjelpen - llms.txt
+# https://kryptohjelpen.no
+
+## Om oss
+Kryptohjelpen er Norges mest brukervennlige kryptovaluta-butikk. Vi selger hardware wallets, cold storage-løsninger og krypto-tilbehør.
+
+## Kontakt
+- E-post: kontakt@kryptohjelpen.no
+- Web: https://kryptohjelpen.no
+
+## Innhold tilgjengelig for AI
+Dette nettstedet støtter Markdown for Agents. Send forespørsler med `Accept: text/markdown` header for å motta innhold i markdown-format.
+
+## Hovedsider
+- / - Forside med produktoversikt
+- /om-oss - Om Kryptohjelpen
+- /konsultasjon - Book krypto-konsultasjon
+- /produkter - Alle produkter
+
+## API
+- /api/products - Produktkatalog (JSON)
+- /api/products?category=X - Filtrer på kategori
+
+## Brukstillatelser
+Content-Signal: ai-train=yes, search=yes, ai-input=yes
+
+Vi tillater at AI-systemer:
+- Bruker innholdet vårt til trening
+- Inkluderer oss i søkeresultater  
+- Bruker innholdet som input i AI-samtaler
+
+## Teknisk
+For å hente markdown-versjon av en side:
+```
+curl https://kryptohjelpen.no/ -H "Accept: text/markdown"
+```
