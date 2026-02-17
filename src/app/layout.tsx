@@ -22,6 +22,7 @@ export default function RootLayout({
     <html lang="no">
       <head>
         {/* Trustpilot script loaded by TrustpilotWidget component */}
+        <script defer src="https://umami-app-production-3d7b.up.railway.app/script.js" data-website-id="97e5c423-fd3b-4a6b-9756-5c1c3860bb51"></script>
       </head>
       <body className={inter.className}>
         <Nav />
