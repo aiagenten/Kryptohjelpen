@@ -25,6 +25,7 @@ function OrderConfirmationContent() {
           
           if (order.payment_status === 'completed' || order.order_status === 'paid') {
             setStatus('paid');
+            window.umami?.track('booking-complete', { service: 'kryptohjelpen', order: orderNumber });
           } else if (order.payment_status === 'failed' || order.order_status === 'cancelled') {
             setStatus('failed');
           } else {

@@ -71,6 +71,7 @@ export default function Kontakt() {
       });
 
       if (res.ok) {
+        window.umami?.track('form-submit', { type: 'kontakt', subject: formData.subject });
         setStatus('success');
         setFormData({ name: '', email: '', subject: '', message: '' });
       } else {

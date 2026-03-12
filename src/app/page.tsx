@@ -83,6 +83,9 @@ export default function Home() {
   };
 
   const addToCart = async (productId: number) => {
+    const product = products.find(p => p.id === productId);
+    window.umami?.track('booking-click', { product: product?.name || String(productId), page: 'forsiden' });
+
     try {
       const res = await fetch('/api/cart/add', {
         method: 'POST',
@@ -92,7 +95,6 @@ export default function Home() {
       });
 
       if (res.ok) {
-        const product = products.find(p => p.id === productId);
         if (product) {
           showNotification(`${product.name} lagt til i handlekurven`);
         }

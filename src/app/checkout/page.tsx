@@ -139,6 +139,7 @@ export default function CheckoutPage() {
   const handleVippsPayment = async () => {
     setSubmitting(true);
     setError('');
+    window.umami?.track('checkout-start', { method: 'vipps', total: cart.total });
 
     try {
       const { orderId: newOrderId, orderNumber } = await createOrder();
@@ -174,6 +175,7 @@ export default function CheckoutPage() {
   const handleCryptoPayment = async () => {
     setSubmitting(true);
     setError('');
+    window.umami?.track('checkout-start', { method: 'crypto', network: selectedNetwork, total: cart.total });
 
     try {
       const { orderId: newOrderId } = await createOrder();
