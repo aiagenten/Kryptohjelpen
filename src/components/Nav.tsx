@@ -68,6 +68,9 @@ export default function Nav() {
             <Link href="/om-oss" className="text-gray-700 hover:text-[#8DC99C] font-medium transition-colors">
               Om oss
             </Link>
+            <Link href="/kurs" className="text-gray-700 hover:text-[#8DC99C] font-medium transition-colors">
+              Kryptokurs
+            </Link>
             <Link href="/kontakt" className="text-gray-700 hover:text-[#8DC99C] font-medium transition-colors">
               Kontakt
             </Link>
@@ -129,6 +132,9 @@ export default function Nav() {
               </Link>
               <Link href="/om-oss" onClick={() => setMobileMenuOpen(false)} className="px-3 py-2 text-gray-700 hover:bg-gray-50 rounded-lg">
                 Om oss
+              </Link>
+              <Link href="/kurs" onClick={() => setMobileMenuOpen(false)} className="px-3 py-2 text-gray-700 hover:bg-gray-50 rounded-lg">
+                Kryptokurs
               </Link>
               <Link href="/kontakt" onClick={() => setMobileMenuOpen(false)} className="px-3 py-2 text-gray-700 hover:bg-gray-50 rounded-lg">
                 Kontakt
