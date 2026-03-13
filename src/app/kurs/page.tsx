@@ -61,8 +61,8 @@ export default function KursPage() {
           <div className="flex items-center justify-center gap-3 mb-4">
             <GraduationCap className="w-10 h-10 text-white/90" />
           </div>
-          <h1>Gratis Kryptokurs</h1>
-          <p>Lær alt om kryptovaluta fra bunnen av. Steg-for-steg guide tilpasset norske nybegynnere.</p>
+          <h1>Kryptokurs</h1>
+          <p>Lær alt om kryptovaluta fra bunnen av. Steg-for-steg guide tilpasset norske nybegynnere. Logg inn med Vipps for å starte.</p>
         </div>
       </div>
 
@@ -92,6 +92,20 @@ export default function KursPage() {
                 </Link>
               </div>
             )}
+          </div>
+        )}
+
+        {/* Vipps login CTA for non-logged-in users */}
+        {!user && (
+          <div className="mb-10 bg-gradient-to-br from-[#ff5b24]/5 to-[#ff5b24]/10 rounded-2xl p-6 text-center border border-[#ff5b24]/20">
+            <h3 className="text-lg font-bold text-gray-900 mb-2">Logg inn for å starte kurset</h3>
+            <p className="text-gray-600 text-sm mb-4">Kurset er helt gratis. Logg inn med Vipps for å få tilgang til alle kapitlene og spore fremgangen din.</p>
+            <a
+              href="/api/auth/vipps?returnUrl=/kurs"
+              className="inline-flex items-center gap-2 px-5 py-2.5 bg-[#ff5b24] hover:bg-[#e54d1c] text-white rounded-lg font-semibold transition-colors"
+            >
+              Logg inn med Vipps
+            </a>
           </div>
         )}
 
@@ -131,9 +145,9 @@ export default function KursPage() {
                       <h3 className="text-lg font-bold text-gray-900 group-hover:text-[#5a9a6a] transition-colors">
                         {chapter.title}
                       </h3>
-                      {chapter.is_free && (
+                      {!isLocked && !isCompleted && (
                         <span className="px-2 py-0.5 bg-[#8DC99C]/20 text-[#5a9a6a] text-xs font-semibold rounded-md">
-                          GRATIS
+                          TILGJENGELIG
                         </span>
                       )}
                     </div>

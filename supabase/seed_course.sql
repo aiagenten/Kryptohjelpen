@@ -72,7 +72,7 @@ Kryptovaluta er digitale penger som drives av blokkjedeteknologi. De er desentra
 
 I neste kapittel dykker vi dypere inn i hvordan blokkjedeteknologien faktisk fungerer.',
   1,
-  true
+  false
 ),
 
 -- Kapittel 2: Hvordan fungerer blockchain? (GRATIS)
@@ -181,7 +181,7 @@ Blockchain er en kjede av datablokker sikret med kryptografi. Mining og konsensu
 
 Neste kapittel handler om krypto-lommebøker – hvordan du faktisk oppbevarer og sikrer dine kryptovalutaer.',
   2,
-  true
+  false
 ),
 
 -- Kapittel 3: Krypto-lommebøker (KREVER LOGIN)

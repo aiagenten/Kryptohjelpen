@@ -135,11 +135,7 @@ export default function ChapterPage() {
             <span className="text-sm font-semibold text-[#5a9a6a]">
               Kapittel {chapter.chapter_number}
             </span>
-            {chapter.is_free && (
-              <span className="px-2 py-0.5 bg-[#8DC99C]/20 text-[#5a9a6a] text-xs font-semibold rounded-md">
-                GRATIS
-              </span>
-            )}
+
             {isCompleted && (
               <span className="px-2 py-0.5 bg-green-100 text-green-700 text-xs font-semibold rounded-md flex items-center gap-1">
                 <CheckCircle className="w-3 h-3" />
