@@ -19,6 +19,15 @@ interface Progress {
   completed_at: string;
 }
 
+const chapterImages: Record<number, string> = {
+  1: '/images/kurs/kap1-kryptovaluta.png',
+  2: '/images/kurs/kap2-blockchain.png',
+  3: '/images/kurs/kap3-lommebok.png',
+  4: '/images/kurs/kap4-kjope-selge.png',
+  5: '/images/kurs/kap5-defi.png',
+  6: '/images/kurs/kap6-sikkerhet.png',
+};
+
 export default function KursPage() {
   const [chapters, setChapters] = useState<Chapter[]>([]);
   const [progress, setProgress] = useState<Progress[]>([]);
@@ -55,14 +64,22 @@ export default function KursPage() {
 
   return (
     <div className="min-h-screen">
-      {/* Hero */}
-      <div className="page-hero">
-        <div className="max-w-4xl mx-auto">
+      {/* Hero with background image */}
+      <div className="relative overflow-hidden">
+        <div className="absolute inset-0">
+          <img
+            src="/images/kurs/kurs-hero.png"
+            alt=""
+            className="w-full h-full object-cover"
+          />
+          <div className="absolute inset-0 bg-gradient-to-b from-black/60 via-black/50 to-black/70" />
+        </div>
+        <div className="relative max-w-4xl mx-auto px-4 sm:px-8 py-20 sm:py-28 text-center">
           <div className="flex items-center justify-center gap-3 mb-4">
             <GraduationCap className="w-10 h-10 text-white/90" />
           </div>
-          <h1>Kryptokurs</h1>
-          <p>Lær alt om kryptovaluta fra bunnen av. Steg-for-steg guide tilpasset norske nybegynnere. Logg inn med Vipps for å starte.</p>
+          <h1 className="text-4xl sm:text-5xl font-extrabold text-white mb-4">Kryptokurs</h1>
+          <p className="text-lg text-white/80 max-w-2xl mx-auto">Lær alt om kryptovaluta fra bunnen av. Steg-for-steg guide tilpasset norske nybegynnere. Logg inn med Vipps for å starte.</p>
         </div>
       </div>
 
@@ -119,52 +136,59 @@ export default function KursPage() {
               <Link
                 key={chapter.id}
                 href={`/kurs/${chapter.slug}`}
-                className="block bg-white rounded-2xl p-6 shadow-sm hover:-translate-y-1 hover:shadow-md transition-all duration-300 group"
+                className="block bg-white rounded-2xl overflow-hidden shadow-sm hover:-translate-y-1 hover:shadow-md transition-all duration-300 group"
               >
-                <div className="flex items-start gap-4">
-                  {/* Chapter number / status icon */}
-                  <div className={`flex-shrink-0 w-12 h-12 rounded-xl flex items-center justify-center font-bold text-lg ${
-                    isCompleted
-                      ? 'bg-[#8DC99C] text-white'
-                      : isLocked
-                        ? 'bg-gray-100 text-gray-400'
-                        : 'bg-gradient-to-br from-[#8DC99C]/20 to-[#5a9a6a]/20 text-[#5a9a6a]'
-                  }`}>
-                    {isCompleted ? (
-                      <CheckCircle className="w-6 h-6" />
-                    ) : isLocked ? (
-                      <Lock className="w-5 h-5" />
-                    ) : (
-                      chapter.chapter_number
-                    )}
-                  </div>
-
-                  {/* Content */}
-                  <div className="flex-1 min-w-0">
-                    <div className="flex items-center gap-2 mb-1">
-                      <h3 className="text-lg font-bold text-gray-900 group-hover:text-[#5a9a6a] transition-colors">
-                        {chapter.title}
-                      </h3>
-                      {!isLocked && !isCompleted && (
-                        <span className="px-2 py-0.5 bg-[#8DC99C]/20 text-[#5a9a6a] text-xs font-semibold rounded-md">
-                          TILGJENGELIG
-                        </span>
+                <div className="flex flex-col sm:flex-row">
+                  {/* Chapter image */}
+                  {chapterImages[chapter.chapter_number] && (
+                    <div className="sm:w-48 sm:flex-shrink-0 h-40 sm:h-auto relative overflow-hidden">
+                      <img
+                        src={chapterImages[chapter.chapter_number]}
+                        alt={chapter.title}
+                        className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-500"
+                      />
+                      {isLocked && (
+                        <div className="absolute inset-0 bg-black/40 flex items-center justify-center">
+                          <Lock className="w-8 h-8 text-white/80" />
+                        </div>
+                      )}
+                      {isCompleted && (
+                        <div className="absolute top-2 right-2 bg-[#8DC99C] rounded-full p-1">
+                          <CheckCircle className="w-5 h-5 text-white" />
+                        </div>
                       )}
                     </div>
-                    <p className="text-gray-600 text-sm line-clamp-2">
-                      {chapter.description}
-                    </p>
-                    {isLocked && (
-                      <p className="text-xs text-gray-400 mt-2 flex items-center gap-1">
-                        <Lock className="w-3 h-3" />
-                        Logg inn med Vipps for å lese dette kapittelet
-                      </p>
-                    )}
-                  </div>
+                  )}
 
-                  {/* Arrow */}
-                  <div className="flex-shrink-0 self-center">
-                    <ChevronRight className="w-5 h-5 text-gray-300 group-hover:text-[#8DC99C] transition-colors" />
+                  {/* Content */}
+                  <div className="flex-1 p-6 flex items-start gap-4">
+                    <div className="flex-1 min-w-0">
+                      <div className="flex items-center gap-2 mb-1">
+                        <span className="text-xs font-semibold text-[#5a9a6a]">Kapittel {chapter.chapter_number}</span>
+                        {isCompleted && (
+                          <span className="px-2 py-0.5 bg-green-100 text-green-700 text-xs font-semibold rounded-md">
+                            Fullført
+                          </span>
+                        )}
+                      </div>
+                      <h3 className="text-lg font-bold text-gray-900 group-hover:text-[#5a9a6a] transition-colors mb-1">
+                        {chapter.title}
+                      </h3>
+                      <p className="text-gray-600 text-sm line-clamp-2">
+                        {chapter.description}
+                      </p>
+                      {isLocked && (
+                        <p className="text-xs text-gray-400 mt-2 flex items-center gap-1">
+                          <Lock className="w-3 h-3" />
+                          Logg inn med Vipps for å lese
+                        </p>
+                      )}
+                    </div>
+
+                    {/* Arrow */}
+                    <div className="flex-shrink-0 self-center">
+                      <ChevronRight className="w-5 h-5 text-gray-300 group-hover:text-[#8DC99C] transition-colors" />
+                    </div>
                   </div>
                 </div>
               </Link>

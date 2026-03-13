@@ -24,6 +24,15 @@ interface ChapterListItem {
   is_free: boolean;
 }
 
+const chapterImages: Record<number, string> = {
+  1: '/images/kurs/kap1-kryptovaluta.png',
+  2: '/images/kurs/kap2-blockchain.png',
+  3: '/images/kurs/kap3-lommebok.png',
+  4: '/images/kurs/kap4-kjope-selge.png',
+  5: '/images/kurs/kap5-defi.png',
+  6: '/images/kurs/kap6-sikkerhet.png',
+};
+
 export default function ChapterPage() {
   const params = useParams();
   const router = useRouter();
@@ -128,6 +137,18 @@ export default function ChapterPage() {
         </div>
       </div>
 
+      {/* Chapter hero image */}
+      {chapterImages[chapter.chapter_number] && (
+        <div className="w-full h-48 sm:h-64 relative overflow-hidden">
+          <img
+            src={chapterImages[chapter.chapter_number]}
+            alt={chapter.title}
+            className="w-full h-full object-cover"
+          />
+          <div className="absolute inset-0 bg-gradient-to-t from-white via-transparent to-transparent" />
+        </div>
+      )}
+
       <div className="max-w-3xl mx-auto px-4 sm:px-8 py-10">
         {/* Chapter header */}
         <div className="mb-8">
@@ -135,7 +156,6 @@ export default function ChapterPage() {
             <span className="text-sm font-semibold text-[#5a9a6a]">
               Kapittel {chapter.chapter_number}
             </span>
-
             {isCompleted && (
               <span className="px-2 py-0.5 bg-green-100 text-green-700 text-xs font-semibold rounded-md flex items-center gap-1">
                 <CheckCircle className="w-3 h-3" />
@@ -162,7 +182,7 @@ export default function ChapterPage() {
               Logg inn for å lese videre
             </h3>
             <p className="text-gray-600 mb-6 max-w-md mx-auto">
-              Dette kapittelet krever innlogging. Logg inn med Vipps – det er gratis og tar bare noen sekunder.
+              Dette kapittelet krever innlogging. Logg inn med Vipps - det er gratis og tar bare noen sekunder.
             </p>
             <a
               href={`/api/auth/vipps?returnUrl=/kurs/${slug}`}
