@@ -3,7 +3,7 @@
 import { useEffect, useState } from 'react';
 import Link from 'next/link';
 import { GraduationCap, PartyPopper, ArrowRight, BookOpen, Shield, TrendingUp, Download, Award } from 'lucide-react';
-import { useRef } from 'react';
+
 
 interface Certificate {
   id: number;
@@ -17,7 +17,6 @@ export default function KursFullfortPage() {
   const [certificate, setCertificate] = useState<Certificate | null>(null);
   const [issuing, setIssuing] = useState(false);
   const [downloading, setDownloading] = useState(false);
-  const certRef = useRef<HTMLDivElement>(null);
 
   useEffect(() => {
     // Check auth and existing certificate
@@ -49,31 +48,18 @@ export default function KursFullfortPage() {
   };
 
   const downloadPDF = async () => {
-    if (!certificate || !certRef.current) return;
+    if (!certificate) return;
     setDownloading(true);
     try {
-      const html2canvas = (await import('html2canvas')).default;
-      const { jsPDF } = await import('jspdf');
-
-      const canvas = await html2canvas(certRef.current, {
-        scale: 2,
-        backgroundColor: '#ffffff',
-        useCORS: true,
-      });
-
-      const imgData = canvas.toDataURL('image/png');
-      const pdf = new jsPDF('landscape', 'mm', 'a4');
-      const pdfWidth = pdf.internal.pageSize.getWidth();
-      const pdfHeight = pdf.internal.pageSize.getHeight();
-
-      const imgWidth = canvas.width;
-      const imgHeight = canvas.height;
-      const ratio = Math.min(pdfWidth / imgWidth, pdfHeight / imgHeight);
-      const x = (pdfWidth - imgWidth * ratio) / 2;
-      const y = (pdfHeight - imgHeight * ratio) / 2;
-
-      pdf.addImage(imgData, 'PNG', x, y, imgWidth * ratio, imgHeight * ratio);
-      pdf.save(`Kursbevis-${certificate.certificate_id}.pdf`);
+      const res = await fetch('/api/course/certificate/pdf', { credentials: 'include' });
+      if (!res.ok) throw new Error('PDF generation failed');
+      const blob = await res.blob();
+      const url = URL.createObjectURL(blob);
+      const a = document.createElement('a');
+      a.href = url;
+      a.download = `Kursbevis-${certificate.certificate_id}.pdf`;
+      a.click();
+      URL.revokeObjectURL(url);
     } catch (err) {
       console.error('PDF download error:', err);
     } finally {
@@ -106,7 +92,7 @@ export default function KursFullfortPage() {
           {certificate ? (
             <div className="bg-white rounded-2xl shadow-sm border-2 border-[#8DC99C] overflow-hidden">
               {/* Certificate visual */}
-              <div ref={certRef} className="bg-gradient-to-br from-[#f8fdf9] to-[#edf7ef] p-8 sm:p-12 text-center relative">
+              <div className="bg-gradient-to-br from-[#f8fdf9] to-[#edf7ef] p-8 sm:p-12 text-center relative">
                 {/* Decorative corners */}
                 <div className="absolute top-4 left-4 w-10 h-10 border-t-2 border-l-2 border-[#8DC99C]/40 rounded-tl-lg" />
                 <div className="absolute top-4 right-4 w-10 h-10 border-t-2 border-r-2 border-[#8DC99C]/40 rounded-tr-lg" />
