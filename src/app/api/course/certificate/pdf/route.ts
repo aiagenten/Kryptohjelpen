@@ -57,18 +57,13 @@ export async function GET() {
     const h = pdf.internal.pageSize.getHeight(); // 210
 
     // === BACKGROUND ===
-    // Soft cream/white base
-    pdf.setFillColor(252, 252, 250);
+    // White base
+    pdf.setFillColor(255, 255, 255);
     pdf.rect(0, 0, w, h, 'F');
 
-    // Subtle green gradient strip at top and bottom
-    for (let i = 0; i < 8; i++) {
-      const alpha = 0.06 - (i * 0.007);
-      const green = Math.round(141 + (i * 8));
-      pdf.setFillColor(green, 201, 156, alpha);
-      pdf.rect(0, i * 1.5, w, 1.5, 'F');
-      pdf.rect(0, h - (i * 1.5) - 1.5, w, 1.5, 'F');
-    }
+    // Soft cream fill inside the frame area
+    pdf.setFillColor(252, 252, 250);
+    pdf.roundedRect(9, 9, w - 18, h - 18, 3, 3, 'F');
 
     // === BORDERS ===
     // Outer border - thick green
@@ -112,18 +107,18 @@ export async function GET() {
       const logoPath = path.join(process.cwd(), 'public', 'images', 'kryptohjelpen-logo.png');
       const logoBuffer = fs.readFileSync(logoPath);
       const logoBase64 = logoBuffer.toString('base64');
-      // Scale logo proportionally - make it smaller and crisper
-      const logoW = 55;
-      const logoH = 16;
-      pdf.addImage(`data:image/png;base64,${logoBase64}`, 'PNG', w / 2 - logoW / 2, 28, logoW, logoH);
+      // Logo is 2839x232 (ratio ~12.2:1) - preserve aspect ratio
+      const logoW = 80;
+      const logoH = logoW / 12.2; // ~6.5mm
+      pdf.addImage(`data:image/png;base64,${logoBase64}`, 'PNG', w / 2 - logoW / 2, 26, logoW, logoH);
     } catch {
       pdf.setFontSize(16);
       pdf.setTextColor(90, 154, 106);
-      pdf.text('KRYPTOHJELPEN', w / 2, 38, { align: 'center' });
+      pdf.text('KRYPTOHJELPEN', w / 2, 34, { align: 'center' });
     }
 
     // === DECORATIVE DIVIDER ===
-    const divY = 50;
+    const divY = 42;
     pdf.setDrawColor(141, 201, 156);
     pdf.setLineWidth(0.3);
     pdf.line(w / 2 - 50, divY, w / 2 - 8, divY);
@@ -150,42 +145,42 @@ export async function GET() {
     pdf.setFontSize(13);
     pdf.setTextColor(90, 154, 106);
     pdf.setFont('helvetica', 'normal');
-    pdf.text('K U R S B E V I S', w / 2, 62, { align: 'center' });
+    pdf.text('K U R S B E V I S', w / 2, 55, { align: 'center' });
 
     // === RECIPIENT NAME ===
     pdf.setFontSize(36);
     pdf.setTextColor(35, 35, 35);
     pdf.setFont('helvetica', 'bold');
-    pdf.text(name, w / 2, 88, { align: 'center' });
+    pdf.text(name, w / 2, 80, { align: 'center' });
 
     // Underline under name
     const nameWidth = pdf.getTextWidth(name);
     pdf.setDrawColor(200, 225, 205);
     pdf.setLineWidth(0.3);
-    pdf.line(w / 2 - nameWidth / 2, 91, w / 2 + nameWidth / 2, 91);
+    pdf.line(w / 2 - nameWidth / 2, 83, w / 2 + nameWidth / 2, 83);
 
     // === DESCRIPTION ===
     pdf.setFontSize(13);
     pdf.setTextColor(120, 120, 120);
     pdf.setFont('helvetica', 'normal');
-    pdf.text('har fullført', w / 2, 103, { align: 'center' });
+    pdf.text('har fullført', w / 2, 95, { align: 'center' });
 
     // === COURSE NAME ===
     pdf.setFontSize(22);
     pdf.setTextColor(90, 154, 106);
     pdf.setFont('helvetica', 'bold');
-    pdf.text('Kryptohjelpens Kryptokurs', w / 2, 118, { align: 'center' });
+    pdf.text('Kryptohjelpens Kryptokurs', w / 2, 110, { align: 'center' });
 
     // === COURSE DETAILS ===
     pdf.setFontSize(10);
     pdf.setTextColor(140, 140, 140);
     pdf.setFont('helvetica', 'normal');
-    pdf.text('6 kapitler  ·  30 quiz-spørsmål  ·  100% bestått', w / 2, 132, { align: 'center' });
+    pdf.text('6 kapitler  ·  30 quiz-spørsmål  ·  100% bestått', w / 2, 124, { align: 'center' });
 
     // === SEAL / BADGE ===
     // Draw a circular seal
     const sealX = w / 2;
-    const sealY = 152;
+    const sealY = 145;
     const sealR = 12;
 
     // Outer circle
