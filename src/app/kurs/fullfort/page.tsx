@@ -3,6 +3,7 @@
 import { useEffect, useState } from 'react';
 import Link from 'next/link';
 import { GraduationCap, PartyPopper, ArrowRight, BookOpen, Shield, TrendingUp, Download, Award } from 'lucide-react';
+import { useRef } from 'react';
 
 interface Certificate {
   id: number;
@@ -15,6 +16,8 @@ export default function KursFullfortPage() {
   const [user, setUser] = useState<{ name: string } | null>(null);
   const [certificate, setCertificate] = useState<Certificate | null>(null);
   const [issuing, setIssuing] = useState(false);
+  const [downloading, setDownloading] = useState(false);
+  const certRef = useRef<HTMLDivElement>(null);
 
   useEffect(() => {
     // Check auth and existing certificate
@@ -45,6 +48,39 @@ export default function KursFullfortPage() {
     }
   };
 
+  const downloadPDF = async () => {
+    if (!certificate || !certRef.current) return;
+    setDownloading(true);
+    try {
+      const html2canvas = (await import('html2canvas')).default;
+      const { jsPDF } = await import('jspdf');
+
+      const canvas = await html2canvas(certRef.current, {
+        scale: 2,
+        backgroundColor: '#ffffff',
+        useCORS: true,
+      });
+
+      const imgData = canvas.toDataURL('image/png');
+      const pdf = new jsPDF('landscape', 'mm', 'a4');
+      const pdfWidth = pdf.internal.pageSize.getWidth();
+      const pdfHeight = pdf.internal.pageSize.getHeight();
+
+      const imgWidth = canvas.width;
+      const imgHeight = canvas.height;
+      const ratio = Math.min(pdfWidth / imgWidth, pdfHeight / imgHeight);
+      const x = (pdfWidth - imgWidth * ratio) / 2;
+      const y = (pdfHeight - imgHeight * ratio) / 2;
+
+      pdf.addImage(imgData, 'PNG', x, y, imgWidth * ratio, imgHeight * ratio);
+      pdf.save(`Kursbevis-${certificate.certificate_id}.pdf`);
+    } catch (err) {
+      console.error('PDF download error:', err);
+    } finally {
+      setDownloading(false);
+    }
+  };
+
   const firstName = user?.name?.split(' ')[0] || '';
   const fullName = certificate?.customerName || user?.name || 'Kursbruker';
 
@@ -70,15 +106,21 @@ export default function KursFullfortPage() {
           {certificate ? (
             <div className="bg-white rounded-2xl shadow-sm border-2 border-[#8DC99C] overflow-hidden">
               {/* Certificate visual */}
-              <div className="bg-gradient-to-br from-[#f8fdf9] to-[#edf7ef] p-8 sm:p-12 text-center relative">
+              <div ref={certRef} className="bg-gradient-to-br from-[#f8fdf9] to-[#edf7ef] p-8 sm:p-12 text-center relative">
                 {/* Decorative corners */}
-                <div className="absolute top-4 left-4 w-8 h-8 border-t-2 border-l-2 border-[#8DC99C]/40 rounded-tl-lg" />
-                <div className="absolute top-4 right-4 w-8 h-8 border-t-2 border-r-2 border-[#8DC99C]/40 rounded-tr-lg" />
-                <div className="absolute bottom-4 left-4 w-8 h-8 border-b-2 border-l-2 border-[#8DC99C]/40 rounded-bl-lg" />
-                <div className="absolute bottom-4 right-4 w-8 h-8 border-b-2 border-r-2 border-[#8DC99C]/40 rounded-br-lg" />
+                <div className="absolute top-4 left-4 w-10 h-10 border-t-2 border-l-2 border-[#8DC99C]/40 rounded-tl-lg" />
+                <div className="absolute top-4 right-4 w-10 h-10 border-t-2 border-r-2 border-[#8DC99C]/40 rounded-tr-lg" />
+                <div className="absolute bottom-4 left-4 w-10 h-10 border-b-2 border-l-2 border-[#8DC99C]/40 rounded-bl-lg" />
+                <div className="absolute bottom-4 right-4 w-10 h-10 border-b-2 border-r-2 border-[#8DC99C]/40 rounded-br-lg" />
 
-                <Award className="w-16 h-16 text-[#5a9a6a] mx-auto mb-4" />
-                <p className="text-sm font-semibold text-[#5a9a6a] tracking-widest uppercase mb-2">Kursbevis</p>
+                {/* Logo */}
+                <img
+                  src="/images/kryptohjelpen-logo.png"
+                  alt="Kryptohjelpen"
+                  className="w-[180px] sm:w-[220px] mx-auto mb-6"
+                />
+
+                <p className="text-sm font-semibold text-[#5a9a6a] tracking-widest uppercase mb-3">Kursbevis</p>
                 <h2 className="text-3xl sm:text-4xl font-extrabold text-gray-900 mb-1">{fullName}</h2>
                 <p className="text-gray-600 mb-6">har fullført</p>
                 <h3 className="text-xl font-bold text-[#5a9a6a] mb-6">Kryptohjelpens Kryptokurs</h3>
@@ -104,6 +146,18 @@ export default function KursFullfortPage() {
                     Bevis-ID: {certificate.certificate_id}
                   </p>
                 </div>
+              </div>
+
+              {/* Download button */}
+              <div className="p-4 bg-white border-t border-[#8DC99C]/20 text-center">
+                <button
+                  onClick={downloadPDF}
+                  disabled={downloading}
+                  className="inline-flex items-center gap-2 px-6 py-3 bg-[#5a9a6a] hover:bg-[#4a8a5a] text-white rounded-lg font-semibold transition-colors"
+                >
+                  <Download className="w-4 h-4" />
+                  {downloading ? 'Genererer PDF...' : 'Last ned som PDF'}
+                </button>
               </div>
             </div>
           ) : (
