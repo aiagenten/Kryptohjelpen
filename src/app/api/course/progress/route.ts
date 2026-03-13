@@ -65,6 +65,20 @@ export async function POST(request: NextRequest) {
       return NextResponse.json({ error: 'Kapittel ikke funnet' }, { status: 404 });
     }
 
+    // Check if quiz was passed for this chapter
+    const { data: quizResult } = await supabase
+      .from('course_quiz_results')
+      .select('passed')
+      .eq('customer_id', customerId)
+      .eq('chapter_id', chapterId)
+      .eq('passed', true)
+      .limit(1)
+      .single();
+
+    if (!quizResult) {
+      return NextResponse.json({ error: 'Du må bestå quizen først' }, { status: 403 });
+    }
+
     // Upsert progress (ignore if already completed)
     const { data: progress, error } = await supabase
       .from('course_progress')

@@ -5,6 +5,7 @@ import { useParams, useRouter } from 'next/navigation';
 import Link from 'next/link';
 import { marked } from 'marked';
 import { ArrowLeft, ArrowRight, CheckCircle, Lock, GraduationCap } from 'lucide-react';
+import CourseQuiz from '@/components/CourseQuiz';
 
 interface Chapter {
   id: number;
@@ -45,6 +46,7 @@ export default function ChapterPage() {
   const [user, setUser] = useState<{ name: string } | null>(null);
   const [loading, setLoading] = useState(true);
   const [marking, setMarking] = useState(false);
+  const [quizPassed, setQuizPassed] = useState(false);
 
   useEffect(() => {
     setLoading(true);
@@ -196,23 +198,25 @@ export default function ChapterPage() {
           </div>
         )}
 
-        {/* Mark as complete + navigation */}
+        {/* Quiz + Mark as complete + navigation */}
         {!locked && (
-          <div className="mt-12 pt-8 border-t border-gray-200">
-            {/* Mark complete button */}
-            {user && !isCompleted && (
-              <div className="mb-8 text-center">
-                <button
-                  onClick={markComplete}
-                  disabled={marking}
-                  className="btn-primary inline-flex items-center gap-2 text-lg"
-                >
-                  <CheckCircle className="w-5 h-5" />
-                  {marking ? 'Lagrer...' : 'Marker som fullført'}
-                </button>
-              </div>
+          <div>
+            {/* Quiz section */}
+            {!isCompleted && (
+              <CourseQuiz
+                chapterSlug={slug}
+                chapterTitle={chapter.title}
+                chapterNumber={chapter.chapter_number}
+                onQuizPassed={() => {
+                  setQuizPassed(true);
+                  // Auto-mark as complete when quiz passed
+                  markComplete();
+                }}
+                isLoggedIn={!!user}
+              />
             )}
 
+            <div className="mt-12 pt-8 border-t border-gray-200">
             {user && isCompleted && (
               <div className="mb-8 text-center">
                 <div className="inline-flex items-center gap-2 text-[#5a9a6a] font-semibold">
@@ -261,6 +265,7 @@ export default function ChapterPage() {
                 </Link>
               )}
             </div>
+          </div>
           </div>
         )}
       </div>
