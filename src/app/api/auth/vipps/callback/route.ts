@@ -2,9 +2,9 @@ import { NextRequest, NextResponse } from 'next/server';
 import supabase from '@/lib/supabase';
 
 const VIPPS_CONFIG = {
-  clientId: process.env.VIPPS_LOGIN_CLIENT_ID!,  // Login MSN 829103
-  clientSecret: process.env.VIPPS_LOGIN_CLIENT_SECRET!,
-  subscriptionKey: process.env.VIPPS_LOGIN_SUBSCRIPTION_KEY!,
+  clientId: process.env.VIPPS_CLIENT_ID!,  // Use same as payment (MSN 823497)
+  clientSecret: process.env.VIPPS_CLIENT_SECRET!,
+  subscriptionKey: process.env.VIPPS_SUBSCRIPTION_KEY!,
   redirectUri: process.env.VIPPS_LOGIN_REDIRECT_URI!,
   mode: process.env.VIPPS_MODE || 'production',
 };
