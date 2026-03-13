@@ -3,6 +3,13 @@
 import { useEffect, useState } from 'react';
 import { useRouter } from 'next/navigation';
 import Link from 'next/link';
+import { Award, GraduationCap } from 'lucide-react';
+
+interface Certificate {
+  certificate_id: string;
+  issued_at: string;
+  customerName: string;
+}
 
 interface Customer {
   id: number;
@@ -25,6 +32,7 @@ export default function MinSidePage() {
   const router = useRouter();
   const [customer, setCustomer] = useState<Customer | null>(null);
   const [orders, setOrders] = useState<Order[]>([]);
+  const [certificate, setCertificate] = useState<Certificate | null>(null);
   const [loading, setLoading] = useState(true);
 
   useEffect(() => {
@@ -43,6 +51,7 @@ export default function MinSidePage() {
 
       setCustomer(data.customer);
       loadOrders();
+      loadCertificate();
     } catch {
       router.push('/logg-inn');
     } finally {
@@ -69,6 +78,16 @@ export default function MinSidePage() {
       router.push('/');
     } catch (error) {
       console.error('Logout failed:', error);
+    }
+  };
+
+  const loadCertificate = async () => {
+    try {
+      const res = await fetch('/api/course/certificate', { credentials: 'include' });
+      const data = await res.json();
+      if (data.certificate) setCertificate(data.certificate);
+    } catch (error) {
+      console.error('Failed to load certificate:', error);
     }
   };
 
@@ -144,6 +163,46 @@ export default function MinSidePage() {
             </div>
           </div>
         </div>
+
+        {/* Certificate */}
+        {certificate && (
+          <div className="md:col-span-3 mb-0">
+            <div className="bg-gradient-to-r from-[#f8fdf9] to-[#edf7ef] border-2 border-[#8DC99C] rounded-xl p-6 flex items-center gap-4">
+              <Award className="w-10 h-10 text-[#5a9a6a] flex-shrink-0" />
+              <div className="flex-1">
+                <h3 className="font-bold text-gray-900">Kryptokurs — Fullført ✅</h3>
+                <p className="text-sm text-gray-600">
+                  Bevis-ID: {certificate.certificate_id} · Utstedt {new Date(certificate.issued_at).toLocaleDateString('nb-NO')}
+                </p>
+              </div>
+              <Link
+                href="/kurs/fullfort"
+                className="px-4 py-2 bg-[#5a9a6a] text-white rounded-lg text-sm font-semibold hover:bg-[#4a8a5a] transition-colors flex items-center gap-1"
+              >
+                <GraduationCap className="w-4 h-4" />
+                Se bevis
+              </Link>
+            </div>
+          </div>
+        )}
+
+        {!certificate && (
+          <div className="md:col-span-3 mb-0">
+            <Link
+              href="/kurs"
+              className="block bg-white rounded-xl shadow-sm p-6 hover:shadow-md transition-all group"
+            >
+              <div className="flex items-center gap-4">
+                <GraduationCap className="w-10 h-10 text-[#8DC99C] flex-shrink-0" />
+                <div className="flex-1">
+                  <h3 className="font-bold text-gray-900 group-hover:text-[#5a9a6a] transition-colors">Kryptokurs</h3>
+                  <p className="text-sm text-gray-500">Lær krypto fra bunnen av — helt gratis</p>
+                </div>
+                <span className="text-[#5a9a6a] text-sm font-semibold">Start kurset →</span>
+              </div>
+            </Link>
+          </div>
+        )}
 
         {/* Orders */}
         <div className="md:col-span-2">

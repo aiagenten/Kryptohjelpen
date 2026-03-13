@@ -2,19 +2,51 @@
 
 import { useEffect, useState } from 'react';
 import Link from 'next/link';
-import { GraduationCap, PartyPopper, ArrowRight, BookOpen, Shield, TrendingUp } from 'lucide-react';
+import { GraduationCap, PartyPopper, ArrowRight, BookOpen, Shield, TrendingUp, Download, Award } from 'lucide-react';
+
+interface Certificate {
+  id: number;
+  certificate_id: string;
+  issued_at: string;
+  customerName: string;
+}
 
 export default function KursFullfortPage() {
   const [user, setUser] = useState<{ name: string } | null>(null);
+  const [certificate, setCertificate] = useState<Certificate | null>(null);
+  const [issuing, setIssuing] = useState(false);
 
   useEffect(() => {
-    fetch('/api/auth/me', { credentials: 'include' })
-      .then(r => r.json())
-      .then(data => {
-        if (data.authenticated) setUser(data.customer);
-      })
-      .catch(() => {});
+    // Check auth and existing certificate
+    Promise.all([
+      fetch('/api/auth/me', { credentials: 'include' }).then(r => r.json()),
+      fetch('/api/course/certificate', { credentials: 'include' }).then(r => r.json()),
+    ]).then(([authData, certData]) => {
+      if (authData.authenticated) setUser(authData.customer);
+      if (certData.certificate) setCertificate(certData.certificate);
+    }).catch(() => {});
   }, []);
+
+  const issueCertificate = async () => {
+    setIssuing(true);
+    try {
+      const res = await fetch('/api/course/certificate', {
+        method: 'POST',
+        credentials: 'include',
+      });
+      const data = await res.json();
+      if (data.certificate) {
+        setCertificate(data.certificate);
+      }
+    } catch (err) {
+      console.error('Certificate error:', err);
+    } finally {
+      setIssuing(false);
+    }
+  };
+
+  const firstName = user?.name?.split(' ')[0] || '';
+  const fullName = certificate?.customerName || user?.name || 'Kursbruker';
 
   return (
     <div className="min-h-screen">
@@ -26,12 +58,71 @@ export default function KursFullfortPage() {
             <GraduationCap className="w-12 h-12 text-white" />
             <PartyPopper className="w-10 h-10 text-white/90 scale-x-[-1]" />
           </div>
-          <h1>Gratulerer{user ? `, ${user.name.split(' ')[0]}` : ''}!</h1>
+          <h1>Gratulerer{firstName ? `, ${firstName}` : ''}!</h1>
           <p>Du har fullført Kryptohjelpens kryptokurs. Du har nå bedre kunnskap om krypto enn de fleste nordmenn!</p>
         </div>
       </div>
 
       <div className="max-w-3xl mx-auto px-4 sm:px-8 py-12">
+
+        {/* Certificate */}
+        <div className="mb-8">
+          {certificate ? (
+            <div className="bg-white rounded-2xl shadow-sm border-2 border-[#8DC99C] overflow-hidden">
+              {/* Certificate visual */}
+              <div className="bg-gradient-to-br from-[#f8fdf9] to-[#edf7ef] p-8 sm:p-12 text-center relative">
+                {/* Decorative corners */}
+                <div className="absolute top-4 left-4 w-8 h-8 border-t-2 border-l-2 border-[#8DC99C]/40 rounded-tl-lg" />
+                <div className="absolute top-4 right-4 w-8 h-8 border-t-2 border-r-2 border-[#8DC99C]/40 rounded-tr-lg" />
+                <div className="absolute bottom-4 left-4 w-8 h-8 border-b-2 border-l-2 border-[#8DC99C]/40 rounded-bl-lg" />
+                <div className="absolute bottom-4 right-4 w-8 h-8 border-b-2 border-r-2 border-[#8DC99C]/40 rounded-br-lg" />
+
+                <Award className="w-16 h-16 text-[#5a9a6a] mx-auto mb-4" />
+                <p className="text-sm font-semibold text-[#5a9a6a] tracking-widest uppercase mb-2">Kursbevis</p>
+                <h2 className="text-3xl sm:text-4xl font-extrabold text-gray-900 mb-1">{fullName}</h2>
+                <p className="text-gray-600 mb-6">har fullført</p>
+                <h3 className="text-xl font-bold text-[#5a9a6a] mb-6">Kryptohjelpens Kryptokurs</h3>
+
+                <div className="flex flex-col sm:flex-row items-center justify-center gap-4 sm:gap-8 text-sm text-gray-500">
+                  <div>
+                    <span className="font-semibold text-gray-700">6 kapitler</span> fullført med quiz
+                  </div>
+                  <div className="hidden sm:block text-gray-300">|</div>
+                  <div>
+                    Utstedt <span className="font-semibold text-gray-700">
+                      {new Date(certificate.issued_at).toLocaleDateString('nb-NO', {
+                        day: 'numeric',
+                        month: 'long',
+                        year: 'numeric',
+                      })}
+                    </span>
+                  </div>
+                </div>
+
+                <div className="mt-6 pt-4 border-t border-[#8DC99C]/20">
+                  <p className="text-xs text-gray-400">
+                    Bevis-ID: {certificate.certificate_id}
+                  </p>
+                </div>
+              </div>
+            </div>
+          ) : (
+            <div className="bg-white rounded-2xl p-8 shadow-sm text-center">
+              <Award className="w-12 h-12 text-[#5a9a6a] mx-auto mb-4" />
+              <h2 className="text-xl font-bold text-gray-900 mb-2">Hent ditt kursbevis</h2>
+              <p className="text-gray-600 mb-6">Du har fullført alle kapitlene! Kursbeviset lagres på din konto.</p>
+              <button
+                onClick={issueCertificate}
+                disabled={issuing}
+                className="btn-primary inline-flex items-center gap-2 text-lg"
+              >
+                <GraduationCap className="w-5 h-5" />
+                {issuing ? 'Utsteder...' : 'Hent kursbevis'}
+              </button>
+            </div>
+          )}
+        </div>
+
         {/* Summary */}
         <div className="bg-white rounded-2xl p-8 shadow-sm mb-8">
           <h2 className="text-2xl font-bold text-gray-900 mb-4">Hva du har lært</h2>
